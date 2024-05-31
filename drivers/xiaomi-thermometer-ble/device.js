@@ -4,12 +4,25 @@ const { Device } = require("homey");
 
 class MyDevice extends Device {
   /**
+   * Override the log method to customize log format
+   */
+  log(...args) {
+    const timestamp = new Date().toISOString();
+    const deviceId = this.getData().id || this.getData().token;
+    const deviceName = this.getName();
+    console.log(`${timestamp} [Device: ${deviceName} -`, ...args);
+  }
+
+  /**
    * onInit is called when the device is initialized.
    */
   async onInit() {
     this.log("Xiaomi BLE device has been initialized");
     console.log(this.getData());
     this.addListener("updateTag", this.updateTag);
+
+    // Get the initial temperature offset setting
+    this.temperatureOffset = this.getSetting("temperature_offset") || 0;
   }
 
   /**
@@ -28,7 +41,12 @@ class MyDevice extends Device {
    * @returns {Promise<string|void>} return a custom message that will be displayed
    */
   async onSettings({ oldSettings, newSettings, changedKeys }) {
-    this.log("Xiaomi BLE settings where changed");
+    this.log("Xiaomi BLE settings were changed");
+
+    if (changedKeys.includes("temperature_offset")) {
+      this.temperatureOffset = newSettings.temperature_offset;
+      this.log(`Device ${this.getName()} temperature offset: ${this.temperatureOffset}°C`);
+    }
   }
 
   /**
@@ -67,7 +85,7 @@ class MyDevice extends Device {
             console.log("BLE Hum: ", dattta[8], "%");
             console.log("BLE Batt: ", dattta[9], "%");
             console.log("");
-            let temperature = ((dattta[6] << 8) | dattta[7]) / 10;
+            let temperature = ((dattta[6] << 8) | dattta[7]) / 10 + this.temperatureOffset;
             let humidity = dattta[8];
             let battery = dattta[9];
             this.setCapabilityValue("measure_temperature", temperature);
@@ -77,6 +95,7 @@ class MyDevice extends Device {
         });
       } else {
         //throw new Error("The device could not be found!");
+        console.log("Xiaomi BLE devices not found !");
       }
     });
   }
