@@ -2,7 +2,8 @@
 
 const Homey = require('homey');
 const { workerData } = require('worker_threads');
-const SERVICE_UUID = "181a"
+
+const SERVICE_UUID = '181a';
 class MyApp extends Homey.App {
 
   /**
@@ -10,7 +11,8 @@ class MyApp extends Homey.App {
    */
   async onInit() {
     this.log('MyApp has been initialized');
-}
+  }
+
 }
 
 module.exports = MyApp;

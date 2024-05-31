@@ -9,13 +9,20 @@ class MyDriver extends Driver {
    * onInit is called when the driver is initialized.
    */
   async onInit() {
-    this.log('MyDriver has been initialized');
-    //polling BLE
-    this.polling = true;
-    this.addListener('poll', this.pollDevice);
+    this.log('BLE driver has been initialized');
 
-    // Initiating device polling
-    this.emit('poll');
+    // Check if any devices exist
+    const devices = this.getDevices();
+    if (devices.length > 0) {
+      this.polling = true;
+      this.addListener('poll', this.pollDevice);
+
+      // Initiating device polling
+      this.emit('poll');
+    } else {
+      this.log('No BLE devices found. Polling is disabled.');
+      this.polling = false;
+    }
   }
 
   /**

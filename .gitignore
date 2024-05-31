@@ -1,4 +1,26 @@
-/env.json
-/node_modules/
+# homey files
+userdata
+userconf.json
+.homeyignore
+_CleanUp_
+app.json__NEW
+app.json__ORIG
+
+#node modules
+node_modules/*
+
+# client id & secret
+env.json
+
+# Development tools
+.project
+.settings
+
+
+
+# Added by Homey CLI
 /.homeybuild/
-.DS_Store
+.dependencygraph/data.json
+.dependencygraph/setting.json
+.vscode/settings.json
+/node_modules

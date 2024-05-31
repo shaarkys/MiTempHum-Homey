@@ -8,7 +8,7 @@ class MyDriver extends Driver {
    * onInit is called when the driver is initialized.
    */
   async onInit() {
-    this.log('MyDriver has been initialized');
+    this.log('ZigBee has been initialized');
   }
 
   /**
