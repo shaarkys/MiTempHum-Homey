@@ -52,7 +52,7 @@ module.exports = class XiaomiThermometerZigbeeDevice extends ZigBeeDevice {
     // measure_battery // alarm_battery
     zclNode.endpoints[1].clusters[CLUSTER.POWER_CONFIGURATION.NAME]
       .on('attr.batteryPercentageRemaining', value => {
-        const batteryPercentage = value / 2;
+        const batteryPercentage = Math.round(value / 2);
         this.log(`Device ${this.getName()} measured battery: ${batteryPercentage}%`);
         this.setCapabilityValue('measure_battery', batteryPercentage);
       });
