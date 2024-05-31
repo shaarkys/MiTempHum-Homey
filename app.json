@@ -5,7 +5,7 @@
   "bugs": {
     "url": "https://github.com/shaarkys/MiTempHum-Homey/issues"
   },
-  "version": "1.2.2",
+  "version": "1.2.3",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "platforms": [

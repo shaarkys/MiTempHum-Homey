@@ -22,5 +22,8 @@
   },
   "1.2.2": {
     "en": "New developer, disabled Zigbee debug, battery level fixes, improved logging, added Zigbee product ID LYWSD03MMC-z"
+  },
+  "1.2.3": {
+    "en": "Added temperature offsets"
   }
 }
