@@ -1,9 +1,11 @@
 {
   "id": "hu.corenet.mitemp",
-  "source": "https://github.com/Zsoltt-dom/MiTempHum-Homey",
+  "source": "https://github.com/shaarkys/MiTempHum-Homey",
+  "bugs": {
+    "url": "https://github.com/shaarkys/MiTempHum-Homey/issues"
+  },
   "version": "1.2.0",
   "compatibility": ">=5.0.0",
-  "support": "mailto:zsolt@reinhardt.es",
   "sdk": 3,
   "platforms": [
     "local"
@@ -31,17 +33,30 @@
     ]
   },
   "author": {
-    "name": "Zsolt Reinhardt",
-    "email": "zsolt@reinhardt.es"
+    "name": "Bretislav Kubesa"
   },
   "contributors": {
     "developers": [
       {
         "name": "Zsolt Reinhardt"
+      },
+      {
+        "name": "Robert Klep"
+      },
+      {
+        "name": "Martin Horák"
       }
     ]
   },
+  "contributing": {
+    "donate": {
+      "paypal": {
+        "username": "bkubesa"
+      }
+    }
+  },
   "brandColor": "#5C9DF3",
+  "homeyCommunityTopicId": 78560,
   "tags": {
     "en": [
       "Xiaomi",
