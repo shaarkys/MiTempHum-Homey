@@ -12,9 +12,15 @@
     "en": "Fixed issue where values were not updating on the old Homey Pro"
   },
   "1.1.3": {
-  "en": "Fixed a bug, where could not discover new devices on the old Homey Pro"
+    "en": "Fixed a bug, where could not discover new devices on the old Homey Pro"
   },
   "1.2.0": {
-  "en": "Added ZigBee drivers provided by Robert Klep"
+    "en": "Added ZigBee drivers provided by Robert Klep"
+  },
+  "1.2.1": {
+    "en": "New developer, disabled Zigbee debug, battery level fixes, improved logging, added Zigbee product ID LYWSD03MMC-z"
+  },
+  "1.2.2": {
+    "en": "New developer, disabled Zigbee debug, battery level fixes, improved logging, added Zigbee product ID LYWSD03MMC-z"
   }
 }
