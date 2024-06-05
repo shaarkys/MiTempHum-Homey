@@ -25,5 +25,8 @@
   },
   "1.2.3": {
     "en": "Added temperature offsets"
+  },
+  "1.2.4": {
+    "en": "Added LYWSDCGQ/01ZM (BLE)"
   }
 }
