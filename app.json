@@ -129,6 +129,65 @@
     },
     {
       "name": {
+        "en": "Xiaomi MJ_HT LYWSD03MMC"
+      },
+      "class": "sensor",
+      "capabilities": [
+        "measure_temperature",
+        "measure_humidity",
+        "measure_battery"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/xiaomi-thermometer-ble2/assets/images/small.png",
+        "large": "/drivers/xiaomi-thermometer-ble2/assets/images/large.png",
+        "xlarge": "/drivers/xiaomi-thermometer-ble2/assets/images/xlarge.png"
+      },
+      "energy": {
+        "batteries": [
+          "AAA"
+        ]
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "xiaomi-thermometer-ble2",
+      "settings": [
+        {
+          "id": "temperature_offset",
+          "type": "number",
+          "label": {
+            "en": "Temperature Offset"
+          },
+          "value": 0,
+          "min": -5,
+          "max": 5,
+          "hint": {
+            "en": "Offset to apply to temperature readings."
+          },
+          "units": {
+            "en": "°C"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
         "en": "Thermometer and Hygrometer (Zigbee)"
       },
       "class": "sensor",

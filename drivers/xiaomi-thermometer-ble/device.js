@@ -95,7 +95,7 @@ class MyDevice extends Device {
         });
       } else {
         //throw new Error("The device could not be found!");
-        console.log("Xiaomi BLE devices not found !");
+        //console.log("Xiaomi BLE devices not found !");
       }
     });
   }

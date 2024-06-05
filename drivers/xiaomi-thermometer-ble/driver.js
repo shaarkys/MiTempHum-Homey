@@ -20,7 +20,7 @@ class MyDriver extends Driver {
       // Initiating device polling
       this.emit('poll');
     } else {
-      this.log('No BLE devices found. Polling is disabled.');
+      this.log('No LYWSD03MMC devices found. Polling is disabled.');
       this.polling = false;
     }
   }
@@ -32,45 +32,48 @@ class MyDriver extends Driver {
    */
   
   async onPairListDevices() {
+    this.log('onPairListDevices method called for BLE device discovery');
+  
     try {
-    let devices = [];
-    const foundDevices = await this.homey.ble.discover([], 30000);
-    foundDevices.forEach(device => {
-      const sdata = device.serviceData;
-      if(sdata !== null){
-      sdata.forEach(uuid => {
-        if(uuid.uuid=="0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid=="181a"){
-          console.log(device.localName);
-          let new_device =
-            {
-              name: device.localName,
-              data: {
-                id: device.address,
-              },
-
-            }
-      
-
-            // Example device data, note that `store` is optional
-            // {
-            //   name: 'My Device',
-            //   data: {
-            //     id: 'my-device',
-            //   },
-            //   store: {
-            //     address: '127.0.0.1',
-            //   },
-            // },
-       devices.push(new_device);
+      let devices = [];
+      this.log('Initiating BLE LYWSD03MMC discovery...');
+      const foundDevices = await this.homey.ble.discover([], 30000);
+  
+      if (foundDevices.length === 0) {
+        this.log('No BLE LYWSD03MMC devices found during discovery.');
+      } else {
+        this.log(`Found ${foundDevices.length} BLE LYWSD03MMC devices.`);
+        foundDevices.forEach(device => {
+          this.log(`Discovered device: ${device.localName}, address: ${device.address}`);
+          const sdata = device.serviceData;
+          if (sdata !== null) {
+            this.log(`Device ${device.localName} has service data.`);
+            sdata.forEach(uuid => {
+              this.log(`Checking UUID: ${uuid.uuid} for device: ${device.localName}`);
+              if (uuid.uuid === "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid === "181a") {
+                this.log(`Matching UUID found for device: ${device.localName}`);
+                let new_device = {
+                  name: device.localName,
+                  data: { id: device.address },
+                };
+                devices.push(new_device);
+                this.log(`Device added for pairing: ${device.localName}, address: ${device.address}`);
+              } else {
+                this.log(`Device ${device.localName} with UUID ${uuid.uuid} does not match.`);
+              }
+            });
+          } else {
+            this.log(`Device ${device.localName} does not have service data.`);
+          }
+        });
       }
-      })
+      this.log(`Total devices added for pairing: ${devices.length}`);
+      return devices;
+    } catch (error) {
+      this.error('Error during BLE device listing:', error);
     }
-    })
-    return devices;
-  } catch (error) {
-    this.error('List device error:', error);
   }
-}
+  
 
   async pollDevice() {
     while (this.polling) {

@@ -3,7 +3,7 @@
 const { ZigBeeDevice } = require("homey-zigbeedriver");
 const { debug, CLUSTER } = require("zigbee-clusters");
 
-// Enable debug logging of all relevant Zigbee communication
+// Enable/disable debug logging of all relevant Zigbee communication
 debug(false);
 
 module.exports = class XiaomiThermometerZigbeeDevice extends ZigBeeDevice {

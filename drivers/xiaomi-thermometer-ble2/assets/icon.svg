@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.1"
+   width="640"
+   height="640"
+   viewBox="0 0 640 640"
+   xml:space="preserve"
+   id="svg10"
+   sodipodi:docname="icon.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+   id="namedview10"
+   pagecolor="#ffffff"
+   bordercolor="#000000"
+   borderopacity="0.25"
+   inkscape:showpageshadow="2"
+   inkscape:pageopacity="0.0"
+   inkscape:pagecheckerboard="0"
+   inkscape:deskcolor="#d1d1d1"
+   inkscape:zoom="0.65241649"
+   inkscape:cx="447.56686"
+   inkscape:cy="489.71785"
+   inkscape:window-width="2560"
+   inkscape:window-height="1377"
+   inkscape:window-x="-8"
+   inkscape:window-y="-8"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="svg10" />
+<desc
+   id="desc1">Created with Fabric.js 3.6.3</desc>
+<defs
+   id="defs1">
+</defs>
+
+
+<ellipse
+   style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#000000;stroke-width:12;stroke-dasharray:none;stroke-opacity:1"
+   id="path10"
+   cx="320.04837"
+   cy="320.47861"
+   rx="269.45944"
+   ry="274.8486" /><ellipse
+   style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#000000;stroke-width:8;stroke-dasharray:none;stroke-opacity:1"
+   id="path10-1"
+   cx="320.04837"
+   cy="318.18149"
+   rx="193.62309"
+   ry="197.49551" /><rect
+   style="fill:#000000;fill-opacity:0;stroke:#000000;stroke-width:8;stroke-miterlimit:30;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+   id="rect10"
+   width="65.908821"
+   height="18.393158"
+   x="289.09396"
+   y="547.45856"
+   rx="3.6205599"
+   ry="2.9973073" /><rect
+   style="fill:#000000;fill-opacity:0;stroke:#000000;stroke-width:3;stroke-miterlimit:30;stroke-dasharray:none;paint-order:stroke fill markers"
+   id="rect1"
+   width="306.55264"
+   height="1.5327632"
+   x="170.13672"
+   y="318.81476"
+   rx="3.6205599"
+   ry="1.5327632" /></svg>
