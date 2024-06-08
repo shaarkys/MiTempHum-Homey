@@ -31,5 +31,8 @@
   },
   "1.2.5": {
     "en": "Refactor of LYWSDCGQ/01ZM (BLE) driver"
+  },
+  "1.2.6": {
+    "en": "LYWSDCGQ/01ZM (BLE) driver updates - RSSI, warning messages on device title if any"
   }
 }
