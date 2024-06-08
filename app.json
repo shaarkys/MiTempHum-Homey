@@ -183,6 +183,22 @@
           "units": {
             "en": "°C"
           }
+        },
+        {
+          "id": "reconnect_interval",
+          "type": "number",
+          "label": {
+            "en": "Reconnect Interval"
+          },
+          "value": 300,
+          "min": 60,
+          "max": 3600,
+          "hint": {
+            "en": "Interval in seconds to wait before attempting to reconnect after a disconnect."
+          },
+          "units": {
+            "en": "seconds"
+          }
         }
       ]
     },

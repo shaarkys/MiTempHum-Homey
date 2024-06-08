@@ -14,21 +14,31 @@ class MyDevice extends Device {
   }
 
   /**
+   * Delay function
+   */
+  delay(s) {
+    return new Promise((resolve) => setTimeout(resolve, 1000 * s));
+  }
+
+  /**
    * onInit is called when the device is initialized.
    */
   async onInit() {
     this.log("LYWSDCGQ/01ZM BLE device has been initialized - ", this.getData());
-    // lets reset all values
+    // Reset all values
     this.setCapabilityValue("measure_temperature", null);
     this.setCapabilityValue("measure_humidity", null);
-    //this.setCapabilityValue("measure_battery", null);
-    this.addListener("updateTag", this.updateTag);
+    this.setCapabilityValue("measure_battery", null);
 
     // Get the initial temperature offset setting
     this.temperatureOffset = this.getSetting("temperature_offset") || 0;
 
-    // Start scanning for BLE devices periodically
-    this.startBLEScan();
+    // Get the reconnect interval setting, default to 5 minutes
+    this.reconnectInterval = this.getSetting("reconnect_interval") || 5 * 60;
+
+    // Enable notifications and subscribe to them
+    await this.enableNotifications();
+    await this.subscribeToBLENotifications();
   }
 
   /**
@@ -36,7 +46,6 @@ class MyDevice extends Device {
    */
   async onAdded() {
     this.log("LYWSDCGQ/01ZM BLE has been added");
-    this.emit("poll");
   }
 
   /**
@@ -54,11 +63,16 @@ class MyDevice extends Device {
       this.temperatureOffset = newSettings.temperature_offset;
       this.log(`Device ${this.getName()} temperature offset: ${this.temperatureOffset}°C`);
     }
+
+    if (changedKeys.includes("reconnect_interval")) {
+      this.reconnectInterval = newSettings.reconnect_interval || 5 * 60;
+      this.log(`Device ${this.getName()} reconnect interval: ${this.reconnectInterval} seconds`);
+    }
   }
 
   /**
    * onRenamed is called when the user updates the device's name.
-   * This method can be used this to synchronise the name to the device.
+   * This method can be used to synchronise the name to the device.
    * @param {string} name The new name
    */
   async onRenamed(name) {
@@ -66,124 +80,186 @@ class MyDevice extends Device {
   }
 
   /**
-   * onDeleted is called when the user deleted the device.
+   * onDeleted is called when the user deletes the device.
    */
   async onDeleted() {
     this.log("LYWSDCGQ/01ZM BLE has been deleted");
-    this.stopBLEScan();
+    await this.stopBLESubscription();
+    this.polling = false;
   }
 
   /**
-   * Periodically scan for BLE devices
+   * Enable notifications for temperature, humidity, and battery
    */
-  async startBLEScan() {
-    this.log("Starting BLE scan");
-    this.scanInterval = setInterval(() => this.scanForDevices(), 30000); // Adjust the interval as needed
-  }
+  async enableNotifications() {
+    this.log("Enabling notifications for temperature, humidity, and battery");
+    const deviceData = this.getData();
+    const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
 
-  /**
-   * Stop scanning for BLE devices
-   */
-  stopBLEScan() {
-    if (this.scanInterval) {
-      clearInterval(this.scanInterval);
-      this.scanInterval = null;
-      this.log("Stopped BLE scan");
-    }
-  }
-
-  /**
-   * Scan for BLE devices and update capabilities
-   */
-  async scanForDevices() {
     try {
-      const foundDevices = await this.homey.ble.discover();
-      this.updateTag(foundDevices);
+      const advertisement = await this.homey.ble.find(uuid);
+      const peripheral = await advertisement.connect();
+      this.log(`Connected to device: ${uuid}`);
+
+      // Enable notifications by writing specific data if not already enabled
+      const serviceUuid = "0000fe9500001000800000805f9b34fb";
+      const characteristicUuid = "0000001000001000800000805f9b34fb";
+      const enableNotificationsData = Buffer.from([0x01, 0x00]);
+
+      const service = await peripheral.getService(serviceUuid);
+      this.log(`Obtained service: ${serviceUuid}`);
+      const characteristic = await service.getCharacteristic(characteristicUuid);
+      this.log(`Obtained characteristic: ${characteristicUuid}`);
+
+      // Check if notifications are already enabled
+      const currentValue = await characteristic.read();
+      this.log(`Current value of characteristic: ${currentValue.toString("hex")}`);
+
+      if (!currentValue.slice(0, enableNotificationsData.length).equals(enableNotificationsData)) {
+        this.log("Notifications not enabled, writing enableNotificationsData...");
+        await characteristic.write(enableNotificationsData);
+        this.log("Enabled notifications for temperature and humidity");
+      } else {
+        this.log("Notifications for temperature and humidity are already enabled");
+      }
+
+      // No need to disconnect if we would like to read the data
+      // await peripheral.disconnect();
+      // this.log(`Disconnected from device: ${uuid}`);
     } catch (error) {
-      this.log("Error during BLE scan:", error);
+      this.log(`Failed to enable notifications: ${error}`);
     }
   }
 
-  async updateTag(foundDevices) {
+  /**
+   * Subscribe to BLE notifications and read battery level
+   */
+  // Subscribe to BLE notifications and read battery level
+  async subscribeToBLENotifications() {
+    this.log("Starting BLE subscription");
+    const deviceData = this.getData();
+    const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
+    let lastTempHumidityData = null;
+
+    try {
+      const advertisement = await this.homey.ble.find(uuid);
+      const peripheral = await advertisement.connect();
+      this.log(`Connected to device: ${uuid}`);
+
+      const temperatureHumidityServiceUuid = "226c000064764566756266734470666d";
+      const temperatureHumidityCharacteristicUuid = "226caa5564764566756266734470666d";
+
+      const tempHumService = await peripheral.getService(temperatureHumidityServiceUuid);
+      const tempHumCharacteristic = await tempHumService.getCharacteristic(temperatureHumidityCharacteristicUuid);
+
+      await tempHumCharacteristic.subscribeToNotifications((data) => {
+        const dataString = data.toString("hex");
+        if (lastTempHumidityData !== dataString) {
+          this.log("Received new notification temp/humidity: ", data);
+          this.updateTag(data);
+          lastTempHumidityData = dataString;
+        } else {
+        //  this.log("Duplicate notification received, ignoring.");
+        }
+      });
+
+      // Read battery level
+      const batteryServiceUuid = "0000180f00001000800000805f9b34fb";
+      const batteryCharacteristicUuid = "00002a1900001000800000805f9b34fb";
+
+      const batteryService = await peripheral.getService(batteryServiceUuid);
+      const batteryCharacteristic = await batteryService.getCharacteristic(batteryCharacteristicUuid);
+      const batteryData = await batteryCharacteristic.read();
+
+      this.log(`Battery data buffer: ${batteryData.toString("hex")}`);
+
+      const battery = batteryData.readUInt8(0);
+      this.log(`Battery level: ${battery}%`);
+      if (battery >= 0 && battery <= 100) {
+        this.setCapabilityValue("measure_battery", battery);
+      }
+
+      peripheral.once("disconnect", async () => {
+        this.log(`Disconnected from device: ${uuid}, will attempt to reconnect in ${this.reconnectInterval} seconds`);
+        await this.delay(this.reconnectInterval);
+        await this.subscribeToBLENotifications();
+      });
+
+      this.peripheral = peripheral; // Save the peripheral to unsubscribe later
+
+      this.log(`Subscribed to notifications for device: ${uuid}`);
+    } catch (error) {
+      this.log(`Failed to subscribe to notifications: ${error}`);
+      await this.delay(this.reconnectInterval);
+      await this.subscribeToBLENotifications();
+    }
+  }
+
+  /**
+   * Stop BLE subscription
+   */
+  async stopBLESubscription() {
+    try {
+      if (this.peripheral) {
+        await this.unsubscribeFromBLENotifications(this.peripheral);
+      }
+      this.log("Stopped BLE subscription");
+    } catch (error) {
+      this.log("Error during unsubscribe:", error);
+    }
+  }
+
+  /**
+   * Unsubscribe from BLE notifications
+   */
+  async unsubscribeFromBLENotifications(peripheral) {
+    try {
+      const temperatureHumidityServiceUuid = "226c000064764566756266734470666d";
+      const temperatureHumidityCharacteristicUuid = "226caa5564764566756266734470666d";
+
+      const tempHumService = await peripheral.getService(temperatureHumidityServiceUuid);
+      const tempHumCharacteristic = await tempHumService.getCharacteristic(temperatureHumidityCharacteristicUuid);
+      await tempHumCharacteristic.unsubscribeFromNotifications();
+
+      await peripheral.disconnect();
+      this.log(`Unsubscribed from notifications and disconnected from device: ${peripheral.id}`);
+    } catch (error) {
+      this.log(`Failed to unsubscribe from notifications: ${error}`);
+    }
+  }
+
+  /**
+   * Update tag with received data from BLE notifications
+   */
+  async updateTag(data) {
     this.log(`Updating measurements for ${this.getName()}`);
 
-    const deviceData = this.getData();
-    const mac = deviceData.id;
+    const dataString = data.toString("ascii").trim();
+    const match = dataString.match(/T=([\d.]+)\s+H=([\d.]+)/);
 
-    for (const device of foundDevices) {
-      if (device.address === mac) {
-        this.log("Match found!", device.address);
+    if (match) {
+      const temperature = parseFloat(match[1]) + this.temperatureOffset;
+      const humidity = parseFloat(match[2]);
 
-        const sdata = device.serviceData;
-        for (const uuid of sdata) {
-          if (uuid.uuid === "0000fe95-0000-1000-8000-00805f9b34fb" || uuid.uuid === "fe95") {
-            const data = Buffer.from(uuid.data, "hex");
+      this.log(`LYWSDCGQ temperature: ${temperature}°C, Humidity: ${humidity}%`);
 
-            let temperature, humidity;
-
-            this.log("Analyzing buffer:", data.toString("hex"), "with length:", data.length);
-
-            if (data.length === 16) {
-              let possibleValue = data[14] / 10;
-              if (possibleValue >= 0 && possibleValue <= 99) {
-                this.log("Skipped Buffer length ", data.length);
-              }
-            } else if (data.length === 18) {
-              temperature = data[14] / 10 + this.temperatureOffset;
-              humidity = ((data[17] << 8) | data[16]) / 10;
-            } else {
-              this.log("Buffer length ", data.length);
-            }
-
-            this.log(`LYWSDCGQ temperature: ${temperature}°C, Humidity: ${humidity}%`);
-
-            if (temperature !== undefined) {
-              if (temperature < -20 || temperature > 50) {
-                this.log(`Ignoring temperature reading: ${temperature}°C`);
-              } else {
-                this.setCapabilityValue("measure_temperature", temperature);
-              }
-            }
-
-            if (humidity !== undefined) {
-              if (humidity < 10 || humidity > 99) {
-                this.log(`Ignoring humidity reading: ${humidity}%`);
-              } else {
-                this.setCapabilityValue("measure_humidity", humidity);
-              }
-            }
-          }
-        }
-
-        // Check if the device advertises the battery service UUID
-        if (device.serviceUuids.includes("0000180f00001000800000805f9b34fb")) {
-          // Connect to the device to read the battery level
-          try {
-            const advertisement = await this.homey.ble.find(device.uuid);
-            const peripheral = await advertisement.connect();
-            this.log(`Connected to device: ${device.uuid}`);
-            const batteryServiceUuid = "0000180f00001000800000805f9b34fb";
-            const batteryCharacteristicUuid = "00002a1900001000800000805f9b34fb";
-
-            const batteryLevel = await peripheral.read(batteryServiceUuid, batteryCharacteristicUuid);
-            const battery = batteryLevel.readUInt8(0);
-            this.log(`Battery level: ${battery}%`);
-
-            if (battery !== undefined) {
-              if (battery < 0 || battery > 100) {
-                this.log(`Ignoring battery reading: ${battery}%`);
-              } else {
-                this.setCapabilityValue("measure_battery", battery);
-              }
-            }
-
-            await peripheral.disconnect();
-            this.log(`Disconnected from device: ${device.uuid}`);
-          } catch (error) {
-            this.log(`Failed to connect or read battery level: ${error}`);
-          }
+      if (temperature !== undefined) {
+        if (temperature < -20 || temperature > 50) {
+          this.log(`Ignoring temperature reading: ${temperature}°C`);
+        } else {
+          this.setCapabilityValue("measure_temperature", temperature);
         }
       }
+
+      if (humidity !== undefined) {
+        if (humidity < 10 || humidity > 99) {
+          this.log(`Ignoring humidity reading: ${humidity}%`);
+        } else {
+          this.setCapabilityValue("measure_humidity", humidity);
+        }
+      }
+    } else {
+      this.log(`Unexpected data format: ${dataString}`);
     }
   }
 }

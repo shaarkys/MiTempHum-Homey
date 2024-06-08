@@ -1,7 +1,6 @@
 "use strict";
 
 const { Driver } = require("homey");
-const delay = (s) => new Promise((resolve) => setTimeout(resolve, 1000 * s));
 
 class MyDriver extends Driver {
   /**
@@ -17,18 +16,6 @@ class MyDriver extends Driver {
    */
   async onInit() {
     this.log("BLE driver has been initialized");
-
-    // Check if any devices exist
-    const devices = this.getDevices();
-    if (devices.length > 0) {
-      this.polling = true;
-      this.addListener("poll", this.pollDevice);
-
-      // Initiating device polling
-      this.emit("poll");
-    } else {
-      this.polling = false;
-    }
   }
 
   /**
@@ -73,32 +60,6 @@ class MyDriver extends Driver {
     } catch (error) {
       this.error("Error during BLE device listing:", error);
       throw error;
-    }
-  }
-
-
-  async pollDevice() {
-    while (this.polling) {
-      try {
-        let polling_interval = this.homey.settings.get("polling_interval") || 30;
-        let scan_duration = this.homey.settings.get("scan_duration") || 20;
-
-        const foundDevices = await this.homey.ble.discover([], scan_duration * 1000);
-        this.log("Scan complete!");
-
-        if (foundDevices.length === 0) {
-          this.log("No new advertisements were detected. Retrying in 1 second.");
-          setTimeout(() => this.pollDevice(), 1000);
-          return;
-        }
-
-        const devices = this.getDevices();
-        devices.forEach((device) => device.emit("updateTag", foundDevices));
-
-        await delay(polling_interval);
-      } catch (error) {
-        this.error("Error during polling BLE devices:", error);
-      }
     }
   }
 }
