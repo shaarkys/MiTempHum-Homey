@@ -1,0 +1,17 @@
+{
+  "id": "measure_rssi",
+  "type": "number",
+  "title": {
+    "en": "RSSI"
+  },
+  "units": {
+    "en": "dBm"
+  },
+  "decimals": 0,
+  "min": -100,
+  "max": 0,
+  "insights": true,
+  "getable": true,
+  "setable": false,
+  "icon": "/assets/rssi_icon.svg"
+}

@@ -29,6 +29,10 @@ class MyDevice extends Device {
     this.setCapabilityValue("measure_temperature", null);
     this.setCapabilityValue("measure_humidity", null);
     this.setCapabilityValue("measure_battery", null);
+    
+    if (!this.hasCapability('measure_rssi')) await this.addCapability('measure_rssi');
+
+    this.setCapabilityValue("measure_rssi", null);
 
     // Get the initial temperature offset setting
     this.temperatureOffset = this.getSetting("temperature_offset") || 0;
@@ -123,11 +127,35 @@ class MyDevice extends Device {
         this.log("Notifications for temperature and humidity are already enabled");
       }
 
+      // Logging RSSI and checking signal strength
+      const rssi = advertisement.rssi;
+      this.log(`Device RSSI: ${rssi} dBm`);
+
+      const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
+      this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
+
+      // Set the RSSI capability value
+      this.setCapabilityValue("measure_rssi", rssi);
+
+      if (rssi < -80) {
+        this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
+        setTimeout(() => this.setWarning(null), 15000);
+      }
+
+      // Read firmware version
+      const deviceInformationServiceUuid = "0000180a00001000800000805f9b34fb";
+      const firmwareCharacteristicUuid = "00002a2600001000800000805f9b34fb";
+      const deviceInfoService = await peripheral.getService(deviceInformationServiceUuid);
+      const firmwareCharacteristic = await deviceInfoService.getCharacteristic(firmwareCharacteristicUuid);
+      const firmwareData = await firmwareCharacteristic.read();
+      this.log(`Firmware version: ${firmwareData.toString("utf-8")}`);
+
       // No need to disconnect if we would like to read the data
       // await peripheral.disconnect();
       // this.log(`Disconnected from device: ${uuid}`);
     } catch (error) {
       this.log(`Failed to enable notifications: ${error}`);
+      setTimeout(() => this.setWarning(null), 95000, await this.setWarning(`${error}`));
     }
   }
 
@@ -140,11 +168,27 @@ class MyDevice extends Device {
     const deviceData = this.getData();
     const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
     let lastTempHumidityData = null;
+    this.setWarning(null);
 
     try {
       const advertisement = await this.homey.ble.find(uuid);
       const peripheral = await advertisement.connect();
       this.log(`Connected to device: ${uuid}`);
+
+      // Logging RSSI and checking signal strength
+      const rssi = advertisement.rssi;
+      this.log(`Device RSSI: ${rssi} dBm`);
+
+      // Set the RSSI capability value
+      this.setCapabilityValue("measure_rssi", rssi);
+
+      const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
+      this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
+
+      if (rssi < -80) {
+        this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
+        setTimeout(() => this.setWarning(null), 15000);
+      }
 
       const temperatureHumidityServiceUuid = "226c000064764566756266734470666d";
       const temperatureHumidityCharacteristicUuid = "226caa5564764566756266734470666d";
@@ -159,7 +203,7 @@ class MyDevice extends Device {
           this.updateTag(data);
           lastTempHumidityData = dataString;
         } else {
-        //  this.log("Duplicate notification received, ignoring.");
+          //  this.log("Duplicate notification received, ignoring.");
         }
       });
 
@@ -188,8 +232,10 @@ class MyDevice extends Device {
       this.peripheral = peripheral; // Save the peripheral to unsubscribe later
 
       this.log(`Subscribed to notifications for device: ${uuid}`);
+      this.setWarning(null);
     } catch (error) {
       this.log(`Failed to subscribe to notifications: ${error}`);
+      setTimeout(() => this.setWarning(null), 65000, await this.setWarning(`${error}`));
       await this.delay(this.reconnectInterval);
       await this.subscribeToBLENotifications();
     }
@@ -237,6 +283,8 @@ class MyDevice extends Device {
     const dataString = data.toString("ascii").trim();
     const match = dataString.match(/T=([\d.]+)\s+H=([\d.]+)/);
 
+    this.setWarning(null);
+
     if (match) {
       const temperature = parseFloat(match[1]) + this.temperatureOffset;
       const humidity = parseFloat(match[2]);
@@ -260,6 +308,7 @@ class MyDevice extends Device {
       }
     } else {
       this.log(`Unexpected data format: ${dataString}`);
+      setTimeout(() => this.setWarning(null), 55000, await this.setWarning(`${error}`));
     }
   }
 }
