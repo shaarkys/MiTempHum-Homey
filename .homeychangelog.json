@@ -28,5 +28,8 @@
   },
   "1.2.4": {
     "en": "Added LYWSDCGQ/01ZM (BLE)"
+  },
+  "1.2.5": {
+    "en": "Refactor of LYWSDCGQ/01ZM (BLE) driver"
   }
 }
