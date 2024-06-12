@@ -29,8 +29,8 @@ class MyDevice extends Device {
     this.setCapabilityValue("measure_temperature", null);
     this.setCapabilityValue("measure_humidity", null);
     this.setCapabilityValue("measure_battery", null);
-    
-    if (!this.hasCapability('measure_rssi')) await this.addCapability('measure_rssi');
+
+    if (!this.hasCapability("measure_rssi")) await this.addCapability("measure_rssi");
 
     this.setCapabilityValue("measure_rssi", null);
 
@@ -43,6 +43,10 @@ class MyDevice extends Device {
     // Enable notifications and subscribe to them
     await this.enableNotifications();
     await this.subscribeToBLENotifications();
+
+    // Set up polling
+    this.addListener("poll", this.subscribeToBLENotifications.bind(this));
+    this.pollDevice();
   }
 
   /**
@@ -90,6 +94,7 @@ class MyDevice extends Device {
     this.log("LYWSDCGQ/01ZM BLE has been deleted");
     await this.stopBLESubscription();
     this.polling = false;
+    clearInterval(this.pollingInterval);
   }
 
   /**
@@ -162,7 +167,6 @@ class MyDevice extends Device {
   /**
    * Subscribe to BLE notifications and read battery level
    */
-  // Subscribe to BLE notifications and read battery level
   async subscribeToBLENotifications() {
     this.log("Starting BLE subscription");
     const deviceData = this.getData();
@@ -206,7 +210,6 @@ class MyDevice extends Device {
           //  this.log("Duplicate notification received, ignoring.");
         }
       });
-
       // Read battery level
       const batteryServiceUuid = "0000180f00001000800000805f9b34fb";
       const batteryCharacteristicUuid = "00002a1900001000800000805f9b34fb";
@@ -224,9 +227,9 @@ class MyDevice extends Device {
       }
 
       peripheral.once("disconnect", async () => {
-        this.log(`Disconnected from device: ${uuid}, will attempt to reconnect in ${this.reconnectInterval} seconds`);
-        await this.delay(this.reconnectInterval);
-        await this.subscribeToBLENotifications();
+        this.log(`Disconnected from device: ${uuid}, will reconnect in ${this.reconnectInterval} seconds`);
+        //      await this.delay(this.reconnectInterval);
+        //        await this.subscribeToBLENotifications();
       });
 
       this.peripheral = peripheral; // Save the peripheral to unsubscribe later
@@ -236,8 +239,8 @@ class MyDevice extends Device {
     } catch (error) {
       this.log(`Failed to subscribe to notifications: ${error}`);
       setTimeout(() => this.setWarning(null), 65000, await this.setWarning(`${error}`));
-      await this.delay(this.reconnectInterval);
-      await this.subscribeToBLENotifications();
+      // await this.delay(this.reconnectInterval);
+      // await this.subscribeToBLENotifications();
     }
   }
 
@@ -310,6 +313,13 @@ class MyDevice extends Device {
       this.log(`Unexpected data format: ${dataString}`);
       setTimeout(() => this.setWarning(null), 55000, await this.setWarning(`${error}`));
     }
+  }
+
+  /**
+   * Poll device periodically
+   */
+  pollDevice() {
+    this.pollingInterval = setInterval(() => this.emit("poll"), this.reconnectInterval * 1000); // Poll every 60 seconds
   }
 }
 
