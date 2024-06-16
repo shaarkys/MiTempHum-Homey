@@ -1,4 +1,4 @@
-App for Mijia (BLE) Tempereature and Humidity sensor (LYWSD03MMC) and LYWSDCGQ/01ZM (BLE)
+Monitor your environment: Connect Mijia BLE Temperature and Humidity sensors (LYWSD03MMC & LYWSDCGQ/01ZM) effortlessly.
 
 Please note, that the LYWSD03MMC sensor needs to be modded with custom 'ATC' firmware using ATC441 advertising format.
 For that please visit https://github.com/pvvx/ATC_MiThermometer and you can use the Telink Flasher to flash the currently supported v3.5 firmware.

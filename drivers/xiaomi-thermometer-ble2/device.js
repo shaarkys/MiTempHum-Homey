@@ -137,6 +137,8 @@ class MyDevice extends Device {
       this.log(`Device RSSI: ${rssi} dBm`);
 
       const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
+      //workaround even this shall be solved by oninit
+      if (!this.hasCapability("measure_rssi")) await this.addCapability("measure_rssi");
       this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
 
       // Set the RSSI capability value
@@ -183,6 +185,9 @@ class MyDevice extends Device {
       const rssi = advertisement.rssi;
       this.log(`Device RSSI: ${rssi} dBm`);
 
+      //workaround even this shall be solved by oninit
+      if (!this.hasCapability("measure_rssi")) await this.addCapability("measure_rssi");
+      
       // Set the RSSI capability value
       this.setCapabilityValue("measure_rssi", rssi);
 

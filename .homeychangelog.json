@@ -40,5 +40,8 @@
   },
   "1.2.8": {
     "en": "Multiple adjustments for LYWSD03MMC"
+  },
+  "1.2.9": {
+    "en": "Prevent exceptions during polling for LYWSD03MMC "
   }
 }
