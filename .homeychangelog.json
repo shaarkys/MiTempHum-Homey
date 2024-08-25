@@ -46,5 +46,8 @@
   },
   "1.2.10": {
     "en": "Readme update + trying to address some unhandledRejections"
+  },
+  "1.2.11": {
+    "en": "Minor fix for Reference error (LYWSDCGQ)"
   }
 }
