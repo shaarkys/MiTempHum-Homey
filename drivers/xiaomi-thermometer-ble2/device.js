@@ -316,7 +316,10 @@ class MyDevice extends Device {
       }
     } else {
       this.log(`Unexpected data format: ${dataString}`);
-      setTimeout(() => this.setWarning(null), 55000, await this.setWarning(`${error}`));
+      /* setTimeout(() => this.setWarning(null), 55000, await this.setWarning(`${error}`)); 
+      row above caused "ReferenceError: error is not defined"
+      */
+      setTimeout(() => this.setWarning(null), 55000, await this.setWarning(`Unexpected data format`));
     }
   }
 

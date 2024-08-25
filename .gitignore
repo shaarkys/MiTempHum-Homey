@@ -24,3 +24,4 @@ env.json
 .dependencygraph/setting.json
 .vscode/settings.json
 /node_modules
+.vs/slnx.sqlite
