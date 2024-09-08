@@ -70,6 +70,13 @@ class MyDevice extends Device {
     let deviceData = this.getData();
     let settings = this.getSettings();
     let mac = this.getData();
+
+      // Add safeguard check if device is still available
+  if (!this.getAvailable()) {
+    this.log(`Device ${this.getName()} is no longer available.`);
+    return;
+  }
+  
     foundDevices.forEach((device) => {
       //this.log("Device Mac: ",device.address);
       if (device.address == mac["id"]) {
