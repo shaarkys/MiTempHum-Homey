@@ -52,5 +52,8 @@
   },
   "1.2.12": {
     "en": "Additional checks for device availability"
+  },
+  "1.2.13": {
+    "en": "Optimisations for LYWSD03MMC"
   }
 }
