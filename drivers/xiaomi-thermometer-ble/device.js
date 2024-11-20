@@ -70,38 +70,42 @@ class MyDevice extends Device {
     let deviceData = this.getData();
     let settings = this.getSettings();
     let mac = this.getData();
-  
-    // Add safeguard check if device is still available
-    if (!this.getAvailable()) {
-      this.log(`Device ${this.getName()} is no longer available.`);
-      return;
-    }
+
+      // Add safeguard check if device is still available
+  if (!this.getAvailable()) {
+    this.log(`Device ${this.getName()} is no longer available.`);
+    return;
+  }
   
     foundDevices.forEach((device) => {
-      if (device.address === mac["id"]) {
+      //this.log("Device Mac: ",device.address);
+      if (device.address == mac["id"]) {
         console.log("Match!", mac, device.address);
+        console.log(device.serviceData);
         const sdata = device.serviceData;
-        for (const uuid in sdata) {
-          if (uuid === "0000181a-0000-1000-8000-00805f9b34fb" || uuid === "181a") {
-            const dataBuffer = sdata[uuid];
-            const data = Buffer.from(dataBuffer);
+        sdata.forEach((uuid) => {
+          if (uuid.uuid == "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid == "181a") {
+            var datas = uuid["data"];
+            const dattta = Buffer.from(uuid["data"], "hex");
             console.log(device.localName);
-            console.log("BLE Temp: ", ((data[6] << 8) | data[7]) / 10, "Celsius");
-            console.log("BLE Hum: ", data[8], "%");
-            console.log("BLE Batt: ", data[9], "%");
+            console.log("BLE Temp: ", ((dattta[6] << 8) | dattta[7]) / 10, "Celsius");
+            console.log("BLE Hum: ", dattta[8], "%");
+            console.log("BLE Batt: ", dattta[9], "%");
             console.log("");
-            let temperature = ((data[6] << 8) | data[7]) / 10 + this.temperatureOffset;
-            let humidity = data[8];
-            let battery = data[9];
+            let temperature = ((dattta[6] << 8) | dattta[7]) / 10 + this.temperatureOffset;
+            let humidity = dattta[8];
+            let battery = dattta[9];
             this.setCapabilityValue("measure_temperature", temperature);
             this.setCapabilityValue("measure_humidity", humidity);
             this.setCapabilityValue("measure_battery", battery);
           }
-        }
+        });
+      } else {
+        //throw new Error("The device could not be found!");
+        //console.log("Xiaomi BLE devices not found !");
       }
     });
   }
-  
 }
 function readTemperature(buffer) {
   const data = Buffer.from(uuid["data"], "hex");
