@@ -81,8 +81,9 @@ class MyDevice extends Device {
       //this.log("Device Mac: ",device.address);
       if (device.address == mac["id"]) {
         console.log("Match!", mac, device.address);
-        console.log(device.serviceData);
+        console.log("Service Data:", device.serviceData);
         const sdata = device.serviceData;
+        console.log("sdata:", sdata);
         sdata.forEach((uuid) => {
           if (uuid.uuid == "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid == "181a") {
             var datas = uuid["data"];
