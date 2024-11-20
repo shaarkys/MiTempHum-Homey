@@ -55,5 +55,8 @@
   },
   "1.2.13": {
     "en": "Optimisations for LYWSD03MMC"
+  },
+  "1.2.14": {
+    "en": "Additional logging for LYWSD03MMC + fixes"
   }
 }
