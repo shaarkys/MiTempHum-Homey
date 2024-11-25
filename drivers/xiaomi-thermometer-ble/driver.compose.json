@@ -1,17 +1,17 @@
 {
   "name": {
-    "en": "Thermometer and Hygrometer (BLE)",
-    "nl": "Thermometer en Hygrometer (BLE)",
-    "da": "Termometer og Hygrometer (BLE)",
-    "de": "Thermometer und Hygrometer (BLE)",
-    "es": "Termómetro e higrómetro (BLE)",
-    "fr": "Thermomètre et Hygromètre (BLE)",
-    "it": "Termometro e Igrometro (BLE)",
-    "no": "Termometer og Hygrometer (BLE)",
-    "sv": "Termometer och Hygrometer (BLE)",
-    "pl": "Termometr i Higrometr (BLE)",
-    "ru": "Термометр и Гигрометр (BLE)",
-    "ko": "온도계 및 습도계 (BLE)"
+    "en": "LYWSD03MMC ATC (BLE)",
+    "nl": "LYWSD03MMC ATC (BLE)",
+    "da": "LYWSD03MMC ATC (BLE)",
+    "de": "LYWSD03MMC ATC (BLE)",
+    "es": "LYWSD03MMC ATC (BLE)",
+    "fr": "LYWSD03MMC ATC (BLE)",
+    "it": "LYWSD03MMC ATC (BLE)",
+    "no": "LYWSD03MMC ATC (BLE)",
+    "sv": "LYWSD03MMC ATC (BLE)",
+    "pl": "LYWSD03MMC ATC (BLE)",
+    "ru": "LYWSD03MMC ATC (BLE)",
+    "ko": "LYWSD03MMC ATC (BLE)"
   },
   "class": "sensor",
   "capabilities": [

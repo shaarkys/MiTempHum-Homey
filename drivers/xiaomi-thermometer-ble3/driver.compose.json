@@ -1,17 +1,6 @@
 {
   "name": {
-    "en": "Original LYWSD03MMC firmware (BLE)",
-    "nl": "Originele LYWSD03MMC-firmware (BLE)",
-    "da": "Original LYWSD03MMC firmware (BLE)",
-    "de": "Original LYWSD03MMC-Firmware (BLE)",
-    "es": "Firmware original LYWSD03MMC (BLE)",
-    "fr": "Firmware original LYWSD03MMC (BLE)",
-    "it": "Firmware originale LYWSD03MMC (BLE)",
-    "no": "Original LYWSD03MMC firmware (BLE)",
-    "sv": "Original LYWSD03MMC firmware (BLE)",
-    "pl": "Oryginalne oprogramowanie LYWSD03MMC (BLE)",
-    "ru": "Оригинальная прошивка LYWSD03MMC (BLE)",
-    "ko": "오리지널 LYWSD03MMC 펌웨어 (BLE)"
+    "en": "LYWSD03MMC not ATC (BLE)"
   },
   "class": "sensor",
   "capabilities": [
@@ -47,5 +36,18 @@
       "id": "add_devices",
       "template": "add_devices"
     }
-  ]
+  ],
+  "name_translations": {
+    "nl": "LYWSD03MMC niet ATC (BLE)",
+    "da": "LYWSD03MMC ikke ATC (BLE)",
+    "de": "LYWSD03MMC nicht ATC (BLE)",
+    "es": "LYWSD03MMC no ATC (BLE)",
+    "fr": "LYWSD03MMC pas ATC (BLE)",
+    "it": "LYWSD03MMC non ATC (BLE)",
+    "no": "LYWSD03MMC ikke ATC (BLE)",
+    "sv": "LYWSD03MMC inte ATC (BLE)",
+    "pl": "LYWSD03MMC nie ATC (BLE)",
+    "ru": "LYWSD03MMC не ATC (BLE)",
+    "ko": "LYWSD03MMC ATC 아님 (BLE)"
+  }
 }

@@ -346,18 +346,18 @@
     },
     {
       "name": {
-        "en": "Thermometer and Hygrometer (BLE)",
-        "nl": "Thermometer en Hygrometer (BLE)",
-        "da": "Termometer og Hygrometer (BLE)",
-        "de": "Thermometer und Hygrometer (BLE)",
-        "es": "Termómetro e higrómetro (BLE)",
-        "fr": "Thermomètre et Hygromètre (BLE)",
-        "it": "Termometro e Igrometro (BLE)",
-        "no": "Termometer og Hygrometer (BLE)",
-        "sv": "Termometer och Hygrometer (BLE)",
-        "pl": "Termometr i Higrometr (BLE)",
-        "ru": "Термометр и Гигрометр (BLE)",
-        "ko": "온도계 및 습도계 (BLE)"
+        "en": "LYWSD03MMC ATC (BLE)",
+        "nl": "LYWSD03MMC ATC (BLE)",
+        "da": "LYWSD03MMC ATC (BLE)",
+        "de": "LYWSD03MMC ATC (BLE)",
+        "es": "LYWSD03MMC ATC (BLE)",
+        "fr": "LYWSD03MMC ATC (BLE)",
+        "it": "LYWSD03MMC ATC (BLE)",
+        "no": "LYWSD03MMC ATC (BLE)",
+        "sv": "LYWSD03MMC ATC (BLE)",
+        "pl": "LYWSD03MMC ATC (BLE)",
+        "ru": "LYWSD03MMC ATC (BLE)",
+        "ko": "LYWSD03MMC ATC (BLE)"
       },
       "class": "sensor",
       "capabilities": [
@@ -449,18 +449,7 @@
     },
     {
       "name": {
-        "en": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "nl": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "da": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "de": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "es": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "fr": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "it": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "no": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "sv": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "pl": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "ru": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
-        "ko": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)"
+        "en": "LYWSDCGQ/01ZM (BLE)"
       },
       "class": "sensor",
       "capabilities": [
@@ -602,18 +591,7 @@
     },
     {
       "name": {
-        "en": "Original LYWSD03MMC firmware (BLE)",
-        "nl": "Originele LYWSD03MMC-firmware (BLE)",
-        "da": "Original LYWSD03MMC firmware (BLE)",
-        "de": "Original LYWSD03MMC-Firmware (BLE)",
-        "es": "Firmware original LYWSD03MMC (BLE)",
-        "fr": "Firmware original LYWSD03MMC (BLE)",
-        "it": "Firmware originale LYWSD03MMC (BLE)",
-        "no": "Original LYWSD03MMC firmware (BLE)",
-        "sv": "Original LYWSD03MMC firmware (BLE)",
-        "pl": "Oryginalne oprogramowanie LYWSD03MMC (BLE)",
-        "ru": "Оригинальная прошивка LYWSD03MMC (BLE)",
-        "ko": "오리지널 LYWSD03MMC 펌웨어 (BLE)"
+        "en": "LYWSD03MMC not ATC (BLE)"
       },
       "class": "sensor",
       "capabilities": [
@@ -650,6 +628,19 @@
           "template": "add_devices"
         }
       ],
+      "name_translations": {
+        "nl": "LYWSD03MMC niet ATC (BLE)",
+        "da": "LYWSD03MMC ikke ATC (BLE)",
+        "de": "LYWSD03MMC nicht ATC (BLE)",
+        "es": "LYWSD03MMC no ATC (BLE)",
+        "fr": "LYWSD03MMC pas ATC (BLE)",
+        "it": "LYWSD03MMC non ATC (BLE)",
+        "no": "LYWSD03MMC ikke ATC (BLE)",
+        "sv": "LYWSD03MMC inte ATC (BLE)",
+        "pl": "LYWSD03MMC nie ATC (BLE)",
+        "ru": "LYWSD03MMC не ATC (BLE)",
+        "ko": "LYWSD03MMC ATC 아님 (BLE)"
+      },
       "id": "xiaomi-thermometer-ble3",
       "settings": [
         {
