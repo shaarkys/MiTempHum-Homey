@@ -11,10 +11,32 @@
     "local"
   ],
   "name": {
-    "en": "Xiaomi Miija"
+    "en": "Xiaomi Miija",
+    "nl": "Xiaomi Miija",
+    "da": "Xiaomi Miija",
+    "de": "Xiaomi Miija",
+    "es": "Xiaomi Miija",
+    "fr": "Xiaomi Miija",
+    "it": "Xiaomi Miija",
+    "no": "Xiaomi Miija",
+    "sv": "Xiaomi Miija",
+    "pl": "Xiaomi Miija",
+    "ru": "Xiaomi Miija",
+    "ko": "Xiaomi Miija"
   },
   "description": {
-    "en": "Always up-to-date on your indoor temperature and humidity"
+    "en": "Always up-to-date on your indoor temperature and humidity",
+    "nl": "Altijd up-to-date over je binnentemperatuur en vochtigheid",
+    "da": "Altid opdateret på din indendørs temperatur og fugtighed",
+    "de": "Immer auf dem neuesten Stand über Ihre Innentemperatur und Luftfeuchtigkeit",
+    "es": "Siempre al tanto de la temperatura y humedad interior",
+    "fr": "Toujours à jour sur votre température et humidité intérieure",
+    "it": "Sempre aggiornato sulla temperatura e umidità interna",
+    "no": "Alltid oppdatert på din innendørs temperatur og fuktighet",
+    "sv": "Alltid uppdaterad om din inomhustemperatur och luftfuktighet",
+    "pl": "Zawsze na bieżąco z temperaturą i wilgotnością w pomieszczeniu",
+    "ru": "Всегда в курсе текущей температуры и влажности в помещении",
+    "ko": "실내 온도 및 습도를 항상 최신 상태로 유지합니다"
   },
   "category": [
     "climate"
@@ -61,9 +83,110 @@
     "en": [
       "Xiaomi",
       "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
       "ble",
       "temperature",
       "humidity"
+    ],
+    "nl": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatuur",
+      "vochtigheid"
+    ],
+    "da": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatur",
+      "fugtighed"
+    ],
+    "de": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatur",
+      "luftfeuchtigkeit"
+    ],
+    "es": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatura",
+      "humedad"
+    ],
+    "fr": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "température",
+      "humidité"
+    ],
+    "it": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatura",
+      "umidità"
+    ],
+    "no": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatur",
+      "fuktighet"
+    ],
+    "sv": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatur",
+      "fuktighet"
+    ],
+    "pl": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatura",
+      "wilgotność"
+    ],
+    "ru": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "температура",
+      "влажность"
+    ],
+    "ko": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "온도",
+      "습도"
     ]
   }
 }

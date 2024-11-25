@@ -1,23 +1,24 @@
 {
   "name": {
-    "en": "Thermometer and Hygrometer (BLE)",
-    "nl": "Thermometer en Hygrometer (BLE)",
-    "da": "Termometer og Hygrometer (BLE)",
-    "de": "Thermometer und Hygrometer (BLE)",
-    "es": "Termómetro e higrómetro (BLE)",
-    "fr": "Thermomètre et Hygromètre (BLE)",
-    "it": "Termometro e Igrometro (BLE)",
-    "no": "Termometer og Hygrometer (BLE)",
-    "sv": "Termometer och Hygrometer (BLE)",
-    "pl": "Termometr i Higrometr (BLE)",
-    "ru": "Термометр и Гигрометр (BLE)",
-    "ko": "온도계 및 습도계 (BLE)"
+    "en": "LYWSD02MMC (BLE)",
+    "nl": "LYWSD02MMC (BLE)",
+    "da": "LYWSD02MMC (BLE)",
+    "de": "LYWSD02MMC (BLE)",
+    "es": "LYWSD02MMC (BLE)",
+    "fr": "LYWSD02MMC (BLE)",
+    "it": "LYWSD02MMC (BLE)",
+    "no": "LYWSD02MMC (BLE)",
+    "sv": "LYWSD02MMC (BLE)",
+    "pl": "LYWSD02MMC (BLE)",
+    "ru": "LYWSD02MMC (BLE)",
+    "ko": "LYWSD02MMC (BLE)"
   },
   "class": "sensor",
   "capabilities": [
     "measure_temperature",
     "measure_humidity",
-    "measure_battery"
+    "measure_battery",
+    "measure_rssi"
   ],
   "platforms": [
     "local"
@@ -32,7 +33,7 @@
   },
   "energy": {
     "batteries": [
-      "CR2032"
+      "AAA"
     ]
   },
   "pair": [

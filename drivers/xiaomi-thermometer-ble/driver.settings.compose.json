@@ -2,11 +2,50 @@
   {
     "id": "temperature_offset",
     "type": "number",
-    "label": { "en": "Temperature Offset" },
+    "label": {
+      "en": "Temperature Offset",
+      "nl": "Temperatuuraanpassing",
+      "da": "Temperaturjustering",
+      "de": "Temperaturausgleich",
+      "es": "Compensación de Temperatura",
+      "fr": "Décalage de Température",
+      "it": "Offset di Temperatura",
+      "no": "Temperaturjustering",
+      "sv": "Temperaturkompensation",
+      "pl": "Przesunięcie Temperatury",
+      "ru": "Смещение Температуры",
+      "ko": "온도 보정"
+    },
     "value": 0,
     "min": -5,
-		"max": 5,
-    "hint": { "en": "Offset to apply to temperature readings." },
-    "units": { "en": "°C" }
+    "max": 5,
+    "hint": {
+      "en": "Offset to apply to temperature readings.",
+      "nl": "Aanpassing toe te passen op temperatuurmetingen.",
+      "da": "Justering der anvendes på temperaturmålinger.",
+      "de": "Ausgleich, der auf Temperaturmesswerte angewendet wird.",
+      "es": "Compensación para aplicar a las lecturas de temperatura.",
+      "fr": "Décalage à appliquer aux relevés de température.",
+      "it": "Offset da applicare alle letture di temperatura.",
+      "no": "Justering som kan brukes på temperaturmålinger.",
+      "sv": "Kompensation att tillämpa på temperaturavläsningar.",
+      "pl": "Przesunięcie do zastosowania do odczytów temperatury.",
+      "ru": "Смещение, применяемое к показаниям температуры.",
+      "ko": "온도 측정값에 적용할 보정."
+    },
+    "units": {
+      "en": "°C",
+      "nl": "°C",
+      "da": "°C",
+      "de": "°C",
+      "es": "°C",
+      "fr": "°C",
+      "it": "°C",
+      "no": "°C",
+      "sv": "°C",
+      "pl": "°C",
+      "ru": "°C",
+      "ko": "°C"
+    }
   }
 ]

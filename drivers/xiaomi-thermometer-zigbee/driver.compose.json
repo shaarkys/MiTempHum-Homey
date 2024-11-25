@@ -1,6 +1,17 @@
 {
   "name": {
-    "en": "Thermometer and Hygrometer (Zigbee)"
+    "en": "LYWSD03MMC (Zigbee)",
+    "nl": "LYWSD03MMC (Zigbee)",
+    "da": "LYWSD03MMC (Zigbee)",
+    "de": "LYWSD03MMC (Zigbee)",
+    "es": "LYWSD03MMC (Zigbee)",
+    "fr": "LYWSD03MMC (Zigbee)",
+    "it": "LYWSD03MMC (Zigbee)",
+    "no": "LYWSD03MMC (Zigbee)",
+    "sv": "LYWSD03MMC (Zigbee)",
+    "pl": "LYWSD03MMC (Zigbee)",
+    "ru": "LYWSD03MMC (Zigbee)",
+    "ko": "LYWSD03MMC (Zigbee)"
   },
   "class": "sensor",
   "capabilities": [
@@ -21,19 +32,46 @@
   },
   "zigbee": {
     "manufacturerName": "Xiaomi",
-    "productId": [ "LYWSD03MMC", "LYWSD03MMC-z" ],
+    "productId": [
+      "LYWSD03MMC",
+      "LYWSD03MMC-z"
+    ],
     "endpoints": {
       "1": {
-        "clusters": [0, 1, 1026, 1029],
-        "bindings": [1, 1026, 1029]
+        "clusters": [
+          0,
+          1,
+          1026,
+          1029
+        ],
+        "bindings": [
+          1,
+          1026,
+          1029
+        ]
       }
     },
     "learnmode": {
       "image": "/drivers/my_driver/assets/learnmode.svg",
-      "instruction": { "en": "Short the GND and Reset contacts (in the battery compartment) for 3 seconds." }
+      "instruction": {
+        "en": "Short the GND and Reset contacts (in the battery compartment) for 3 seconds.",
+        "nl": "Verbind de GND en Reset contacten (in het batterijvak) voor 3 seconden.",
+        "da": "Kortslut GND og Reset kontakterne (i batterirummet) i 3 sekunder.",
+        "de": "Verbinden Sie die Kontakte GND und Reset (im Batteriefach) für 3 Sekunden.",
+        "es": "Corta los contactos GND y Reset (en el compartimento de la batería) durante 3 segundos.",
+        "fr": "Court-circuitez les contacts GND et Reset (dans le compartiment des piles) pendant 3 secondes.",
+        "it": "Collega i contatti GND e Reset (nel vano batteria) per 3 secondi.",
+        "no": "Kortslutt GND og Reset-kontaktene (i batterirommet) i 3 sekunder.",
+        "sv": "Kortslut GND och Reset-kontakterna (i batterifacket) i 3 sekunder.",
+        "pl": "Zewrzyj styki GND i Reset (w komorze baterii) na 3 sekundy.",
+        "ru": "Замкните контакты GND и Reset (в отсеке для батареи) на 3 секунды.",
+        "ko": "3초 동안 GND 및 리셋 접점을 (배터리 칸에) 연결하세요."
+      }
     }
   },
   "energy": {
-    "batteries": [ "CR2032" ]
+    "batteries": [
+      "CR2032"
+    ]
   }
 }

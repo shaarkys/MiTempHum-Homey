@@ -2,21 +2,99 @@
   {
     "id": "temperature_offset",
     "type": "number",
-    "label": { "en": "Temperature Offset" },
+    "label": {
+      "en": "Temperature Offset",
+      "nl": "Temperatuuroffset",
+      "da": "Temperaturforskydning",
+      "de": "Temperaturversatz",
+      "es": "Desplazamiento de temperatura",
+      "fr": "Décalage de température",
+      "it": "Offset di temperatura",
+      "no": "Temperaturforskyvning",
+      "sv": "Temperaturförskjutning",
+      "pl": "Przesunięcie temperatury",
+      "ru": "Коррекция температуры",
+      "ko": "온도 보정"
+    },
     "value": 0,
     "min": -5,
     "max": 5,
-    "hint": { "en": "Offset to apply to temperature readings." },
-    "units": { "en": "°C" }
+    "hint": {
+      "en": "Offset to apply to temperature readings.",
+      "nl": "Correctie voor temperatuurmetingen.",
+      "da": "Forskydning til at anvende på temperaturaflæsninger.",
+      "de": "Versatz zur Anwendung auf Temperaturmessungen.",
+      "es": "Desplazamiento a aplicar a las lecturas de temperatura.",
+      "fr": "Décalage à appliquer aux relevés de température.",
+      "it": "Correzione da applicare alle letture di temperatura.",
+      "no": "Forskyvning å bruke på temperaturavlesninger.",
+      "sv": "Förskjutning att tillämpa på temperaturavläsningar.",
+      "pl": "Przesunięcie do zastosowania na odczyty temperatury.",
+      "ru": "Коррекция для применения к показаниям температуры.",
+      "ko": "온도 측정치에 적용할 보정값입니다."
+    },
+    "units": {
+      "en": "°C",
+      "nl": "°C",
+      "da": "°C",
+      "de": "°C",
+      "es": "°C",
+      "fr": "°C",
+      "it": "°C",
+      "no": "°C",
+      "sv": "°C",
+      "pl": "°C",
+      "ru": "°C",
+      "ko": "°C"
+    }
   },
   {
     "id": "reconnect_interval",
     "type": "number",
-    "label": { "en": "Reconnect Interval" },
+    "label": {
+      "en": "Reconnect Interval",
+      "nl": "Herstelinterval",
+      "da": "Genforbindelsesinterval",
+      "de": "Wiederverbindungsintervall",
+      "es": "Intervalo de reconexión",
+      "fr": "Intervalle de reconnexion",
+      "it": "Intervallo di riconnessione",
+      "no": "Gjenopprettingsintervall",
+      "sv": "Återanslutningsintervall",
+      "pl": "Interwał ponownego łączenia",
+      "ru": "Интервал переподключения",
+      "ko": "재연결 간격"
+    },
     "value": 300,
     "min": 60,
     "max": 3600,
-    "hint": { "en": "Interval in seconds to wait before attempting to reconnect after a disconnect." },
-    "units": { "en": "seconds" }
+    "hint": {
+      "en": "Interval in seconds to wait before attempting to reconnect after a disconnect.",
+      "nl": "Interval in seconden om te wachten voordat u probeert opnieuw verbinding te maken na een verbreking.",
+      "da": "Interval i sekunder at vente, før du forsøger at genoprette forbindelsen efter en afbrydelse.",
+      "de": "Intervall in Sekunden, das vor einem erneuten Verbindungsversuch nach einer Trennung gewartet wird.",
+      "es": "Intervalo en segundos para esperar antes de intentar reconectar después de una desconexión.",
+      "fr": "Intervalle en secondes à attendre avant d'essayer de se reconnecter après une déconnexion.",
+      "it": "Intervallo in secondi da attendere prima di tentare di riconnettersi dopo una disconnessione.",
+      "no": "Intervall i sekunder å vente før du prøver å koble til igjen etter en frakobling.",
+      "sv": "Intervall i sekunder att vänta innan du försöker återansluta efter en frånkoppling.",
+      "pl": "Interwał w sekundach do odczekania przed próbą ponownego połączenia po rozłączeniu.",
+      "ru": "Интервал в секундах, который нужно подождать перед повторной попыткой подключения после отключения.",
+      "ko": "연결 해제 후 재연결을 시도하기 전에 대기할 시간(초)입니다."
+    },
+    "units": {
+      "en": "seconds",
+      "nl": "seconden",
+      "da": "sekunder",
+      "de": "Sekunden",
+      "es": "segundos",
+      "fr": "secondes",
+      "it": "secondi",
+      "no": "sekunder",
+      "sv": "sekunder",
+      "pl": "sekundy",
+      "ru": "секунды",
+      "ko": "초"
+    }
   }
 ]

@@ -1,6 +1,17 @@
 {
   "name": {
-    "en": "Xiaomi MJ_HT LYWSD03MMC"
+    "en": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "nl": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "da": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "de": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "es": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "fr": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "it": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "no": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "sv": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "pl": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "ru": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+    "ko": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)"
   },
   "class": "sensor",
   "capabilities": [

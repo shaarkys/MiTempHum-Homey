@@ -2,10 +2,32 @@
   "id": "measure_rssi",
   "type": "number",
   "title": {
-    "en": "RSSI"
+    "en": "RSSI",
+    "nl": "RSSI",
+    "da": "RSSI",
+    "de": "RSSI",
+    "es": "RSSI",
+    "fr": "RSSI",
+    "it": "RSSI",
+    "no": "RSSI",
+    "sv": "RSSI",
+    "pl": "RSSI",
+    "ru": "RSSI",
+    "ko": "RSSI"
   },
   "units": {
-    "en": "dBm"
+    "en": "dBm",
+    "nl": "dBm",
+    "da": "dBm",
+    "de": "dBm",
+    "es": "dBm",
+    "fr": "dBm",
+    "it": "dBm",
+    "no": "dBm",
+    "sv": "dBm",
+    "pl": "dBm",
+    "ru": "dBm",
+    "ko": "dBm"
   },
   "decimals": 0,
   "min": -100,

@@ -12,10 +12,32 @@
     "local"
   ],
   "name": {
-    "en": "Xiaomi Miija"
+    "en": "Xiaomi Miija",
+    "nl": "Xiaomi Miija",
+    "da": "Xiaomi Miija",
+    "de": "Xiaomi Miija",
+    "es": "Xiaomi Miija",
+    "fr": "Xiaomi Miija",
+    "it": "Xiaomi Miija",
+    "no": "Xiaomi Miija",
+    "sv": "Xiaomi Miija",
+    "pl": "Xiaomi Miija",
+    "ru": "Xiaomi Miija",
+    "ko": "Xiaomi Miija"
   },
   "description": {
-    "en": "Always up-to-date on your indoor temperature and humidity"
+    "en": "Always up-to-date on your indoor temperature and humidity",
+    "nl": "Altijd up-to-date over je binnentemperatuur en vochtigheid",
+    "da": "Altid opdateret på din indendørs temperatur og fugtighed",
+    "de": "Immer auf dem neuesten Stand über Ihre Innentemperatur und Luftfeuchtigkeit",
+    "es": "Siempre al tanto de la temperatura y humedad interior",
+    "fr": "Toujours à jour sur votre température et humidité intérieure",
+    "it": "Sempre aggiornato sulla temperatura e umidità interna",
+    "no": "Alltid oppdatert på din innendørs temperatur og fuktighet",
+    "sv": "Alltid uppdaterad om din inomhustemperatur och luftfuktighet",
+    "pl": "Zawsze na bieżąco z temperaturą i wilgotnością w pomieszczeniu",
+    "ru": "Всегда в курсе текущей температуры и влажности в помещении",
+    "ko": "실내 온도 및 습도를 항상 최신 상태로 유지합니다"
   },
   "category": [
     "climate"
@@ -62,15 +84,280 @@
     "en": [
       "Xiaomi",
       "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
       "ble",
       "temperature",
       "humidity"
+    ],
+    "nl": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatuur",
+      "vochtigheid"
+    ],
+    "da": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatur",
+      "fugtighed"
+    ],
+    "de": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatur",
+      "luftfeuchtigkeit"
+    ],
+    "es": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatura",
+      "humedad"
+    ],
+    "fr": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "température",
+      "humidité"
+    ],
+    "it": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatura",
+      "umidità"
+    ],
+    "no": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatur",
+      "fuktighet"
+    ],
+    "sv": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatur",
+      "fuktighet"
+    ],
+    "pl": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "temperatura",
+      "wilgotność"
+    ],
+    "ru": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "температура",
+      "влажность"
+    ],
+    "ko": [
+      "Xiaomi",
+      "Mijia",
+      "LYWSD03MMC",
+      "LYWSD02MMC",
+      "ble",
+      "온도",
+      "습도"
     ]
   },
   "drivers": [
     {
       "name": {
-        "en": "Thermometer and Hygrometer (BLE)"
+        "en": "LYWSD02MMC (BLE)",
+        "nl": "LYWSD02MMC (BLE)",
+        "da": "LYWSD02MMC (BLE)",
+        "de": "LYWSD02MMC (BLE)",
+        "es": "LYWSD02MMC (BLE)",
+        "fr": "LYWSD02MMC (BLE)",
+        "it": "LYWSD02MMC (BLE)",
+        "no": "LYWSD02MMC (BLE)",
+        "sv": "LYWSD02MMC (BLE)",
+        "pl": "LYWSD02MMC (BLE)",
+        "ru": "LYWSD02MMC (BLE)",
+        "ko": "LYWSD02MMC (BLE)"
+      },
+      "class": "sensor",
+      "capabilities": [
+        "measure_temperature",
+        "measure_humidity",
+        "measure_battery",
+        "measure_rssi"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/LYWSD02MMC/assets/images/small.png",
+        "large": "/drivers/LYWSD02MMC/assets/images/large.png",
+        "xlarge": "/drivers/LYWSD02MMC/assets/images/xlarge.png"
+      },
+      "energy": {
+        "batteries": [
+          "AAA"
+        ]
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "LYWSD02MMC",
+      "settings": [
+        {
+          "id": "temperature_offset",
+          "type": "number",
+          "label": {
+            "en": "Temperature Offset",
+            "nl": "Temperatuurcompensatie",
+            "da": "Temperaturkorrektion",
+            "de": "Temperaturkorrektur",
+            "es": "Compensación de temperatura",
+            "fr": "Décalage de température",
+            "it": "Offset di temperatura",
+            "no": "Temperaturforskyvning",
+            "sv": "Temperaturkompensation",
+            "pl": "Przesunięcie temperatury",
+            "ru": "Смещение температуры",
+            "ko": "온도 오프셋"
+          },
+          "value": 0,
+          "min": -5,
+          "max": 5,
+          "hint": {
+            "en": "Offset to apply to temperature readings.",
+            "nl": "Compensatie om toe te passen op temperatuuruitlezingen.",
+            "da": "Offset til at anvende på temperaturmålinger.",
+            "de": "Offset zur Anwendung auf Temperaturmessungen.",
+            "es": "Compensación para aplicar a las lecturas de temperatura.",
+            "fr": "Décalage à appliquer aux relevés de température.",
+            "it": "Offset da applicare alle letture della temperatura.",
+            "no": "Forskyvning å bruke på temperaturavlesninger.",
+            "sv": "Offset att applicera på temperaturavläsningar.",
+            "pl": "Przesunięcie do zastosowania przy odczycie temperatury.",
+            "ru": "Смещение для использования в показаниях температуры.",
+            "ko": "온도 판독값에 적용할 오프셋입니다."
+          },
+          "units": {
+            "en": "°C",
+            "nl": "°C",
+            "da": "°C",
+            "de": "°C",
+            "es": "°C",
+            "fr": "°C",
+            "it": "°C",
+            "no": "°C",
+            "sv": "°C",
+            "pl": "°C",
+            "ru": "°C",
+            "ko": "°C"
+          }
+        },
+        {
+          "id": "reconnect_interval",
+          "type": "number",
+          "label": {
+            "en": "Reconnect Interval",
+            "nl": "Herverbinding Interval",
+            "da": "Genforbindelsesinterval",
+            "de": "Wiederverbindungsintervall",
+            "es": "Intervalo de reconexión",
+            "fr": "Intervalle de reconnexion",
+            "it": "Intervallo di riconnessione",
+            "no": "Gjenopprettingsintervall",
+            "sv": "Återanslutningsintervall",
+            "pl": "Interwał ponownego połączenia",
+            "ru": "Интервал переподключения",
+            "ko": "재연결 간격"
+          },
+          "value": 300,
+          "min": 60,
+          "max": 3600,
+          "hint": {
+            "en": "Interval in seconds to wait before attempting to reconnect after a disconnect.",
+            "nl": "Interval in seconden om te wachten voordat opnieuw proberen verbinding te maken na een verbreking.",
+            "da": "Interval i sekunder at vente, før der forsøges at genforbinde efter en afbrydelse.",
+            "de": "Intervall in Sekunden, bevor versucht wird, nach einer Trennung erneut eine Verbindung herzustellen.",
+            "es": "Intervalo en segundos para esperar antes de intentar reconectar después de una desconexión.",
+            "fr": "Intervalle en secondes à attendre avant de tenter de se reconnecter après une déconnexion.",
+            "it": "Intervallo in secondi da attendere prima di tentare di riconnettersi dopo una disconnessione.",
+            "no": "Intervall i sekunder for å vente før man prøver å koble til igjen etter en frakobling.",
+            "sv": "Intervall i sekunder att vänta innan man försöker återansluta efter en frånkoppling.",
+            "pl": "Przedział czasu w sekundach, jaki należy odczekać przed próbą ponownego połączenia po rozłączeniu.",
+            "ru": "Интервал в секундах ожидания перед повторной попыткой подключения после разрыва.",
+            "ko": "연결이 끊어진 후 재연결을 시도하기 전에 대기할 시간(초)입니다."
+          },
+          "units": {
+            "en": "seconds",
+            "nl": "seconden",
+            "da": "sekunder",
+            "de": "Sekunden",
+            "es": "segundos",
+            "fr": "secondes",
+            "it": "secondi",
+            "no": "sekunder",
+            "sv": "sekunder",
+            "pl": "sekundy",
+            "ru": "секунды",
+            "ko": "초"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "en": "Thermometer and Hygrometer (BLE)",
+        "nl": "Thermometer en Hygrometer (BLE)",
+        "da": "Termometer og Hygrometer (BLE)",
+        "de": "Thermometer und Hygrometer (BLE)",
+        "es": "Termómetro e higrómetro (BLE)",
+        "fr": "Thermomètre et Hygromètre (BLE)",
+        "it": "Termometro e Igrometro (BLE)",
+        "no": "Termometer og Hygrometer (BLE)",
+        "sv": "Termometer och Hygrometer (BLE)",
+        "pl": "Termometr i Higrometr (BLE)",
+        "ru": "Термометр и Гигрометр (BLE)",
+        "ko": "온도계 및 습도계 (BLE)"
       },
       "class": "sensor",
       "capabilities": [
@@ -113,23 +400,67 @@
           "id": "temperature_offset",
           "type": "number",
           "label": {
-            "en": "Temperature Offset"
+            "en": "Temperature Offset",
+            "nl": "Temperatuuraanpassing",
+            "da": "Temperaturjustering",
+            "de": "Temperaturausgleich",
+            "es": "Compensación de Temperatura",
+            "fr": "Décalage de Température",
+            "it": "Offset di Temperatura",
+            "no": "Temperaturjustering",
+            "sv": "Temperaturkompensation",
+            "pl": "Przesunięcie Temperatury",
+            "ru": "Смещение Температуры",
+            "ko": "온도 보정"
           },
           "value": 0,
           "min": -5,
           "max": 5,
           "hint": {
-            "en": "Offset to apply to temperature readings."
+            "en": "Offset to apply to temperature readings.",
+            "nl": "Aanpassing toe te passen op temperatuurmetingen.",
+            "da": "Justering der anvendes på temperaturmålinger.",
+            "de": "Ausgleich, der auf Temperaturmesswerte angewendet wird.",
+            "es": "Compensación para aplicar a las lecturas de temperatura.",
+            "fr": "Décalage à appliquer aux relevés de température.",
+            "it": "Offset da applicare alle letture di temperatura.",
+            "no": "Justering som kan brukes på temperaturmålinger.",
+            "sv": "Kompensation att tillämpa på temperaturavläsningar.",
+            "pl": "Przesunięcie do zastosowania do odczytów temperatury.",
+            "ru": "Смещение, применяемое к показаниям температуры.",
+            "ko": "온도 측정값에 적용할 보정."
           },
           "units": {
-            "en": "°C"
+            "en": "°C",
+            "nl": "°C",
+            "da": "°C",
+            "de": "°C",
+            "es": "°C",
+            "fr": "°C",
+            "it": "°C",
+            "no": "°C",
+            "sv": "°C",
+            "pl": "°C",
+            "ru": "°C",
+            "ko": "°C"
           }
         }
       ]
     },
     {
       "name": {
-        "en": "Xiaomi MJ_HT LYWSD03MMC"
+        "en": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "nl": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "da": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "de": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "es": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "fr": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "it": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "no": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "sv": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "pl": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "ru": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)",
+        "ko": "Xiaomi Mijia LYWSDCGQ/01ZM (BLE)"
       },
       "class": "sensor",
       "capabilities": [
@@ -173,39 +504,268 @@
           "id": "temperature_offset",
           "type": "number",
           "label": {
-            "en": "Temperature Offset"
+            "en": "Temperature Offset",
+            "nl": "Temperatuuroffset",
+            "da": "Temperaturforskydning",
+            "de": "Temperaturversatz",
+            "es": "Desplazamiento de temperatura",
+            "fr": "Décalage de température",
+            "it": "Offset di temperatura",
+            "no": "Temperaturforskyvning",
+            "sv": "Temperaturförskjutning",
+            "pl": "Przesunięcie temperatury",
+            "ru": "Коррекция температуры",
+            "ko": "온도 보정"
           },
           "value": 0,
           "min": -5,
           "max": 5,
           "hint": {
-            "en": "Offset to apply to temperature readings."
+            "en": "Offset to apply to temperature readings.",
+            "nl": "Correctie voor temperatuurmetingen.",
+            "da": "Forskydning til at anvende på temperaturaflæsninger.",
+            "de": "Versatz zur Anwendung auf Temperaturmessungen.",
+            "es": "Desplazamiento a aplicar a las lecturas de temperatura.",
+            "fr": "Décalage à appliquer aux relevés de température.",
+            "it": "Correzione da applicare alle letture di temperatura.",
+            "no": "Forskyvning å bruke på temperaturavlesninger.",
+            "sv": "Förskjutning att tillämpa på temperaturavläsningar.",
+            "pl": "Przesunięcie do zastosowania na odczyty temperatury.",
+            "ru": "Коррекция для применения к показаниям температуры.",
+            "ko": "온도 측정치에 적용할 보정값입니다."
           },
           "units": {
-            "en": "°C"
+            "en": "°C",
+            "nl": "°C",
+            "da": "°C",
+            "de": "°C",
+            "es": "°C",
+            "fr": "°C",
+            "it": "°C",
+            "no": "°C",
+            "sv": "°C",
+            "pl": "°C",
+            "ru": "°C",
+            "ko": "°C"
           }
         },
         {
           "id": "reconnect_interval",
           "type": "number",
           "label": {
-            "en": "Reconnect Interval"
+            "en": "Reconnect Interval",
+            "nl": "Herstelinterval",
+            "da": "Genforbindelsesinterval",
+            "de": "Wiederverbindungsintervall",
+            "es": "Intervalo de reconexión",
+            "fr": "Intervalle de reconnexion",
+            "it": "Intervallo di riconnessione",
+            "no": "Gjenopprettingsintervall",
+            "sv": "Återanslutningsintervall",
+            "pl": "Interwał ponownego łączenia",
+            "ru": "Интервал переподключения",
+            "ko": "재연결 간격"
           },
           "value": 300,
           "min": 60,
           "max": 3600,
           "hint": {
-            "en": "Interval in seconds to wait before attempting to reconnect after a disconnect."
+            "en": "Interval in seconds to wait before attempting to reconnect after a disconnect.",
+            "nl": "Interval in seconden om te wachten voordat u probeert opnieuw verbinding te maken na een verbreking.",
+            "da": "Interval i sekunder at vente, før du forsøger at genoprette forbindelsen efter en afbrydelse.",
+            "de": "Intervall in Sekunden, das vor einem erneuten Verbindungsversuch nach einer Trennung gewartet wird.",
+            "es": "Intervalo en segundos para esperar antes de intentar reconectar después de una desconexión.",
+            "fr": "Intervalle en secondes à attendre avant d'essayer de se reconnecter après une déconnexion.",
+            "it": "Intervallo in secondi da attendere prima di tentare di riconnettersi dopo una disconnessione.",
+            "no": "Intervall i sekunder å vente før du prøver å koble til igjen etter en frakobling.",
+            "sv": "Intervall i sekunder att vänta innan du försöker återansluta efter en frånkoppling.",
+            "pl": "Interwał w sekundach do odczekania przed próbą ponownego połączenia po rozłączeniu.",
+            "ru": "Интервал в секундах, который нужно подождать перед повторной попыткой подключения после отключения.",
+            "ko": "연결 해제 후 재연결을 시도하기 전에 대기할 시간(초)입니다."
           },
           "units": {
-            "en": "seconds"
+            "en": "seconds",
+            "nl": "seconden",
+            "da": "sekunder",
+            "de": "Sekunden",
+            "es": "segundos",
+            "fr": "secondes",
+            "it": "secondi",
+            "no": "sekunder",
+            "sv": "sekunder",
+            "pl": "sekundy",
+            "ru": "секунды",
+            "ko": "초"
           }
         }
       ]
     },
     {
       "name": {
-        "en": "Thermometer and Hygrometer (Zigbee)"
+        "en": "Original LYWSD03MMC firmware (BLE)",
+        "nl": "Originele LYWSD03MMC-firmware (BLE)",
+        "da": "Original LYWSD03MMC firmware (BLE)",
+        "de": "Original LYWSD03MMC-Firmware (BLE)",
+        "es": "Firmware original LYWSD03MMC (BLE)",
+        "fr": "Firmware original LYWSD03MMC (BLE)",
+        "it": "Firmware originale LYWSD03MMC (BLE)",
+        "no": "Original LYWSD03MMC firmware (BLE)",
+        "sv": "Original LYWSD03MMC firmware (BLE)",
+        "pl": "Oryginalne oprogramowanie LYWSD03MMC (BLE)",
+        "ru": "Оригинальная прошивка LYWSD03MMC (BLE)",
+        "ko": "오리지널 LYWSD03MMC 펌웨어 (BLE)"
+      },
+      "class": "sensor",
+      "capabilities": [
+        "measure_temperature",
+        "measure_humidity",
+        "measure_battery",
+        "measure_rssi"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/xiaomi-thermometer-ble3/assets/images/small.png",
+        "large": "/drivers/xiaomi-thermometer-ble3/assets/images/large.png"
+      },
+      "energy": {
+        "batteries": [
+          "CR2032"
+        ]
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "xiaomi-thermometer-ble3",
+      "settings": [
+        {
+          "id": "temperature_offset",
+          "type": "number",
+          "label": {
+            "en": "Temperature Offset",
+            "nl": "Temperatuur Offset",
+            "da": "Temperaturoffset",
+            "de": "Temperaturversatz",
+            "es": "Compensación de Temperatura",
+            "fr": "Décalage de Température",
+            "it": "Offset di Temperatura",
+            "no": "Temperaturoffset",
+            "sv": "Temperaturförskjutning",
+            "pl": "Przesunięcie Temperatury",
+            "ru": "Смещение Температуры",
+            "ko": "온도 보정값"
+          },
+          "value": 0,
+          "min": -5,
+          "max": 5,
+          "hint": {
+            "en": "Offset to apply to temperature readings.",
+            "nl": "Offset om toe te passen op temperatuurrapporten.",
+            "da": "Offset til brug for temperaturmålinger.",
+            "de": "Versatz, der auf Temperaturmessungen angewendet werden soll.",
+            "es": "Compensación para aplicar a las lecturas de temperatura.",
+            "fr": "Décalage à appliquer aux relevés de température.",
+            "it": "Offset da applicare alle letture della temperatura.",
+            "no": "Offset som skal brukes på temperaturavlesninger.",
+            "sv": "Förskjutning att tillämpa på temperaturavläsningar.",
+            "pl": "Przesunięcie do zastosowania w odczytach temperatury.",
+            "ru": "Смещение, которое следует применить к показаниям температуры.",
+            "ko": "온도 측정에 적용할 보정값입니다."
+          },
+          "units": {
+            "en": "°C",
+            "nl": "°C",
+            "da": "°C",
+            "de": "°C",
+            "es": "°C",
+            "fr": "°C",
+            "it": "°C",
+            "no": "°C",
+            "sv": "°C",
+            "pl": "°C",
+            "ru": "°C",
+            "ko": "°C"
+          }
+        },
+        {
+          "id": "reconnect_interval",
+          "type": "number",
+          "label": {
+            "en": "Reconnect Interval",
+            "nl": "Herstelinterval",
+            "da": "Genforbindelsesinterval",
+            "de": "Wiederverbindungsintervall",
+            "es": "Intervalo de Reconexión",
+            "fr": "Intervalle de Reconnexion",
+            "it": "Intervallo di Riconnessione",
+            "no": "Gjenopprettingsintervall",
+            "sv": "Återanslutningsintervall",
+            "pl": "Interwał Ponownego Połączenia",
+            "ru": "Интервал Повторного Подключения",
+            "ko": "재연결 간격"
+          },
+          "value": 300,
+          "min": 60,
+          "max": 3600,
+          "hint": {
+            "en": "Interval in seconds to wait before attempting to reconnect after a disconnect.",
+            "nl": "Interval in seconden om te wachten voordat opnieuw verbinding wordt gemaakt na een onderbreking.",
+            "da": "Interval i sekunder for at vente før der forsøges at genoprette forbindelse efter en afbrydelse.",
+            "de": "Intervall in Sekunden, das gewartet werden soll, bevor versucht wird, nach einer Trennung erneut eine Verbindung herzustellen.",
+            "es": "Intervalo en segundos para esperar antes de intentar reconectar después de una desconexión.",
+            "fr": "Intervalle en secondes à attendre avant de tenter de se reconnecter après une déconnexion.",
+            "it": "Intervallo in secondi da attendere prima di tentare di riconnettersi dopo una disconnessione.",
+            "no": "Intervall i sekunder å vente før du prøver å gjenopprette tilkoblingen etter en frakobling.",
+            "sv": "Intervall i sekunder att vänta innan ett nytt anslutningsförsök görs efter en frånkoppling.",
+            "pl": "Interwał w sekundach, które należy odczekać przed próbą ponownego połączenia po rozłączeniu.",
+            "ru": "Интервал в секундах, который нужно подождать перед попыткой повторного подключения после отключения.",
+            "ko": "연결이 끊긴 후 다시 연결하기 위한 시도 전에 기다릴 간격(초)입니다."
+          },
+          "units": {
+            "en": "seconds",
+            "nl": "seconden",
+            "da": "sekunder",
+            "de": "Sekunden",
+            "es": "segundos",
+            "fr": "secondes",
+            "it": "secondi",
+            "no": "sekunder",
+            "sv": "sekunder",
+            "pl": "sekundy",
+            "ru": "секунды",
+            "ko": "초"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "en": "LYWSD03MMC (Zigbee)",
+        "nl": "LYWSD03MMC (Zigbee)",
+        "da": "LYWSD03MMC (Zigbee)",
+        "de": "LYWSD03MMC (Zigbee)",
+        "es": "LYWSD03MMC (Zigbee)",
+        "fr": "LYWSD03MMC (Zigbee)",
+        "it": "LYWSD03MMC (Zigbee)",
+        "no": "LYWSD03MMC (Zigbee)",
+        "sv": "LYWSD03MMC (Zigbee)",
+        "pl": "LYWSD03MMC (Zigbee)",
+        "ru": "LYWSD03MMC (Zigbee)",
+        "ko": "LYWSD03MMC (Zigbee)"
       },
       "class": "sensor",
       "capabilities": [
@@ -248,7 +808,18 @@
         "learnmode": {
           "image": "/drivers/my_driver/assets/learnmode.svg",
           "instruction": {
-            "en": "Short the GND and Reset contacts (in the battery compartment) for 3 seconds."
+            "en": "Short the GND and Reset contacts (in the battery compartment) for 3 seconds.",
+            "nl": "Verbind de GND en Reset contacten (in het batterijvak) voor 3 seconden.",
+            "da": "Kortslut GND og Reset kontakterne (i batterirummet) i 3 sekunder.",
+            "de": "Verbinden Sie die Kontakte GND und Reset (im Batteriefach) für 3 Sekunden.",
+            "es": "Corta los contactos GND y Reset (en el compartimento de la batería) durante 3 segundos.",
+            "fr": "Court-circuitez les contacts GND et Reset (dans le compartiment des piles) pendant 3 secondes.",
+            "it": "Collega i contatti GND e Reset (nel vano batteria) per 3 secondi.",
+            "no": "Kortslutt GND og Reset-kontaktene (i batterirommet) i 3 sekunder.",
+            "sv": "Kortslut GND och Reset-kontakterna (i batterifacket) i 3 sekunder.",
+            "pl": "Zewrzyj styki GND i Reset (w komorze baterii) na 3 sekundy.",
+            "ru": "Замкните контакты GND и Reset (в отсеке для батареи) на 3 секунды.",
+            "ko": "3초 동안 GND 및 리셋 접점을 (배터리 칸에) 연결하세요."
           }
         }
       },
@@ -263,16 +834,49 @@
           "id": "temperature_offset",
           "type": "number",
           "label": {
-            "en": "Temperature Offset"
+            "en": "Temperature Offset",
+            "nl": "Temperatuurverschil",
+            "da": "Temperaturforskydning",
+            "de": "Temperaturversatz",
+            "es": "Compensación de temperatura",
+            "fr": "Décalage de température",
+            "it": "Offset di temperatura",
+            "no": "Temperaturkompensasjon",
+            "sv": "Temperaturjustering",
+            "pl": "Przesunięcie temperatury",
+            "ru": "Смещение температуры",
+            "ko": "온도 보정치"
           },
           "value": 0,
           "min": -5,
           "max": 5,
           "hint": {
-            "en": "Offset to apply to temperature readings."
+            "en": "Offset to apply to temperature readings.",
+            "nl": "Verschil om toe te passen op temperatuurmetingen.",
+            "da": "Forskydning der anvendes på temperaturaflæsninger.",
+            "de": "Versatz, der auf Temperaturmessungen angewendet wird.",
+            "es": "Compensación para aplicar a las lecturas de temperatura.",
+            "fr": "Décalage à appliquer aux relevés de température.",
+            "it": "Compensazione da applicare alle letture di temperatura.",
+            "no": "Forskyvning å bruke på temperaturmålinger.",
+            "sv": "Justering att applicera på temperaturavläsningar.",
+            "pl": "Przesunięcie do zastosowania do odczytów temperatury.",
+            "ru": "Смещение, применяемое к показаниям температуры.",
+            "ko": "온도 측정값에 적용할 보정치."
           },
           "units": {
-            "en": "°C"
+            "en": "°C",
+            "nl": "°C",
+            "da": "°C",
+            "de": "°C",
+            "es": "°C",
+            "fr": "°C",
+            "it": "°C",
+            "no": "°C",
+            "sv": "°C",
+            "pl": "°C",
+            "ru": "°C",
+            "ko": "°C"
           }
         }
       ]
@@ -283,10 +887,32 @@
       "id": "measure_rssi",
       "type": "number",
       "title": {
-        "en": "RSSI"
+        "en": "RSSI",
+        "nl": "RSSI",
+        "da": "RSSI",
+        "de": "RSSI",
+        "es": "RSSI",
+        "fr": "RSSI",
+        "it": "RSSI",
+        "no": "RSSI",
+        "sv": "RSSI",
+        "pl": "RSSI",
+        "ru": "RSSI",
+        "ko": "RSSI"
       },
       "units": {
-        "en": "dBm"
+        "en": "dBm",
+        "nl": "dBm",
+        "da": "dBm",
+        "de": "dBm",
+        "es": "dBm",
+        "fr": "dBm",
+        "it": "dBm",
+        "no": "dBm",
+        "sv": "dBm",
+        "pl": "dBm",
+        "ru": "dBm",
+        "ko": "dBm"
       },
       "decimals": 0,
       "min": -100,

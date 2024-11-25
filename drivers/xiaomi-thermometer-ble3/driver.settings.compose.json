@@ -1,0 +1,100 @@
+[
+  {
+    "id": "temperature_offset",
+    "type": "number",
+    "label": {
+      "en": "Temperature Offset",
+      "nl": "Temperatuur Offset",
+      "da": "Temperaturoffset",
+      "de": "Temperaturversatz",
+      "es": "Compensación de Temperatura",
+      "fr": "Décalage de Température",
+      "it": "Offset di Temperatura",
+      "no": "Temperaturoffset",
+      "sv": "Temperaturförskjutning",
+      "pl": "Przesunięcie Temperatury",
+      "ru": "Смещение Температуры",
+      "ko": "온도 보정값"
+    },
+    "value": 0,
+    "min": -5,
+    "max": 5,
+    "hint": {
+      "en": "Offset to apply to temperature readings.",
+      "nl": "Offset om toe te passen op temperatuurrapporten.",
+      "da": "Offset til brug for temperaturmålinger.",
+      "de": "Versatz, der auf Temperaturmessungen angewendet werden soll.",
+      "es": "Compensación para aplicar a las lecturas de temperatura.",
+      "fr": "Décalage à appliquer aux relevés de température.",
+      "it": "Offset da applicare alle letture della temperatura.",
+      "no": "Offset som skal brukes på temperaturavlesninger.",
+      "sv": "Förskjutning att tillämpa på temperaturavläsningar.",
+      "pl": "Przesunięcie do zastosowania w odczytach temperatury.",
+      "ru": "Смещение, которое следует применить к показаниям температуры.",
+      "ko": "온도 측정에 적용할 보정값입니다."
+    },
+    "units": {
+      "en": "°C",
+      "nl": "°C",
+      "da": "°C",
+      "de": "°C",
+      "es": "°C",
+      "fr": "°C",
+      "it": "°C",
+      "no": "°C",
+      "sv": "°C",
+      "pl": "°C",
+      "ru": "°C",
+      "ko": "°C"
+    }
+  },
+  {
+    "id": "reconnect_interval",
+    "type": "number",
+    "label": {
+      "en": "Reconnect Interval",
+      "nl": "Herstelinterval",
+      "da": "Genforbindelsesinterval",
+      "de": "Wiederverbindungsintervall",
+      "es": "Intervalo de Reconexión",
+      "fr": "Intervalle de Reconnexion",
+      "it": "Intervallo di Riconnessione",
+      "no": "Gjenopprettingsintervall",
+      "sv": "Återanslutningsintervall",
+      "pl": "Interwał Ponownego Połączenia",
+      "ru": "Интервал Повторного Подключения",
+      "ko": "재연결 간격"
+    },
+    "value": 300,
+    "min": 60,
+    "max": 3600,
+    "hint": {
+      "en": "Interval in seconds to wait before attempting to reconnect after a disconnect.",
+      "nl": "Interval in seconden om te wachten voordat opnieuw verbinding wordt gemaakt na een onderbreking.",
+      "da": "Interval i sekunder for at vente før der forsøges at genoprette forbindelse efter en afbrydelse.",
+      "de": "Intervall in Sekunden, das gewartet werden soll, bevor versucht wird, nach einer Trennung erneut eine Verbindung herzustellen.",
+      "es": "Intervalo en segundos para esperar antes de intentar reconectar después de una desconexión.",
+      "fr": "Intervalle en secondes à attendre avant de tenter de se reconnecter après une déconnexion.",
+      "it": "Intervallo in secondi da attendere prima di tentare di riconnettersi dopo una disconnessione.",
+      "no": "Intervall i sekunder å vente før du prøver å gjenopprette tilkoblingen etter en frakobling.",
+      "sv": "Intervall i sekunder att vänta innan ett nytt anslutningsförsök görs efter en frånkoppling.",
+      "pl": "Interwał w sekundach, które należy odczekać przed próbą ponownego połączenia po rozłączeniu.",
+      "ru": "Интервал в секундах, который нужно подождать перед попыткой повторного подключения после отключения.",
+      "ko": "연결이 끊긴 후 다시 연결하기 위한 시도 전에 기다릴 간격(초)입니다."
+    },
+    "units": {
+      "en": "seconds",
+      "nl": "seconden",
+      "da": "sekunder",
+      "de": "Sekunden",
+      "es": "segundos",
+      "fr": "secondes",
+      "it": "secondi",
+      "no": "sekunder",
+      "sv": "sekunder",
+      "pl": "sekundy",
+      "ru": "секунды",
+      "ko": "초"
+    }
+  }
+]

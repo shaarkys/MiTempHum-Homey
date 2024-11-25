@@ -1,0 +1,5 @@
+Monitorea tu entorno: Conecta los sensores de temperatura y humedad Mijia BLE (LYWSD03MMC y LYWSDCGQ/01ZM) sin esfuerzo.
+
+Ten en cuenta que el sensor LYWSD03MMC necesita ser modificado con el firmware personalizado 'ATC' utilizando el formato de publicidad ATC441. Para eso, visita https://github.com/pvvx/ATC_MiThermometer y puedes usar el Telink Flasher para instalar la versión 3.5 de firmware actualmente soportada. Después de actualizar, no olvides configurar el formato de publicidad ATC1441. La aplicación filtrará los dispositivos detectados por su formato de datos (0x181A) y listará los dispositivos por su nombre.
+
+¡Un gran agradecimiento a Zsolt Reinhardt (desarrollador original de esta app), "Horakmartin" por su contribución y a Robert Klep por implementar también los controladores ZigBee!
