@@ -58,5 +58,8 @@
   },
   "1.2.14": {
     "en": "Additional logging for LYWSD03MMC + fixes"
+  },
+  "1.2.15": {
+    "en": "Support added for LYWSD02MMC and LYWSD03MMC with standard firmware."
   }
 }
