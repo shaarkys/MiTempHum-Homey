@@ -43,7 +43,7 @@ async onPairListDevices() {
     }
 
     const devices = advertisements
-      .filter((advertisement) => advertisement.serviceUuids && advertisement.serviceUuids.includes("ebe0ccb07a0a4b0c8a1a6ff2997da3a6"))
+      .filter((advertisement) => advertisement.serviceUuids && advertisement.localName.includes("LYWSD03"))
       .map((advertisement) => {
         // Log the devices that will be added
         this.log(`Device added for pairing - MAC: ${advertisement.address}, Name: ${advertisement.localName || `Device ${advertisement.address}`}, UUID: ${advertisement.uuid}`);
