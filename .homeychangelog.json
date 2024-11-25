@@ -64,5 +64,8 @@
   },
   "1.2.16": {
     "en": "Support added for LYWSD02MMC and LYWSD03MMC with standard firmware."
+  },
+  "1.2.17": {
+    "en": "Support added for LYWSD02MMC and LYWSD03MMC with standard firmware."
   }
 }
