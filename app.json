@@ -449,7 +449,18 @@
     },
     {
       "name": {
-        "en": "LYWSDCGQ/01ZM (BLE)"
+        "en": "LYWSDCGQ/01ZM (BLE)",
+        "nl": "LYWSDCGQ/01ZM (BLE)",
+        "da": "LYWSDCGQ/01ZM (BLE)",
+        "de": "LYWSDCGQ/01ZM (BLE)",
+        "es": "LYWSDCGQ/01ZM (BLE)",
+        "fr": "LYWSDCGQ/01ZM (BLE)",
+        "it": "LYWSDCGQ/01ZM (BLE)",
+        "no": "LYWSDCGQ/01ZM (BLE)",
+        "sv": "LYWSDCGQ/01ZM (BLE)",
+        "pl": "LYWSDCGQ/01ZM (BLE)",
+        "ru": "LYWSDCGQ/01ZM (BLE)",
+        "ko": "LYWSDCGQ/01ZM (BLE)"
       },
       "class": "sensor",
       "capabilities": [
@@ -591,7 +602,17 @@
     },
     {
       "name": {
-        "en": "LYWSD03MMC not ATC (BLE)"
+        "en": "LYWSD03MMC not ATC (BLE)",
+        "da": "LYWSD03MMC ikke ATC (BLE)",
+        "de": "LYWSD03MMC nicht ATC (BLE)",
+        "es": "LYWSD03MMC no ATC (BLE)",
+        "fr": "LYWSD03MMC pas ATC (BLE)",
+        "it": "LYWSD03MMC non ATC (BLE)",
+        "no": "LYWSD03MMC ikke ATC (BLE)",
+        "sv": "LYWSD03MMC inte ATC (BLE)",
+        "pl": "LYWSD03MMC nie ATC (BLE)",
+        "ru": "LYWSD03MMC не ATC (BLE)",
+        "ko": "LYWSD03MMC ATC 아님 (BLE)"
       },
       "class": "sensor",
       "capabilities": [

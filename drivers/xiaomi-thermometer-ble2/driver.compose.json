@@ -1,6 +1,17 @@
 {
   "name": {
-    "en": "LYWSDCGQ/01ZM (BLE)"
+    "en": "LYWSDCGQ/01ZM (BLE)",
+    "nl": "LYWSDCGQ/01ZM (BLE)",
+    "da": "LYWSDCGQ/01ZM (BLE)",
+    "de": "LYWSDCGQ/01ZM (BLE)",
+    "es": "LYWSDCGQ/01ZM (BLE)",
+    "fr": "LYWSDCGQ/01ZM (BLE)",
+    "it": "LYWSDCGQ/01ZM (BLE)",
+    "no": "LYWSDCGQ/01ZM (BLE)",
+    "sv": "LYWSDCGQ/01ZM (BLE)",
+    "pl": "LYWSDCGQ/01ZM (BLE)",
+    "ru": "LYWSDCGQ/01ZM (BLE)",
+    "ko": "LYWSDCGQ/01ZM (BLE)"
   },
   "class": "sensor",
   "capabilities": [

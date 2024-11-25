@@ -1,5 +1,5 @@
-Surveillez votre environnement : Connectez facilement les capteurs de température et d'humidité Mijia BLE (LYWSD03MMC & LYWSDCGQ/01ZM).
+# MiTemp_BLE
 
-Veuillez noter que le capteur LYWSD03MMC doit être modifié avec le firmware personnalisé 'ATC' en utilisant le format de publicité ATC441. Pour cela, veuillez visiter https://github.com/pvvx/ATC_MiThermometer et vous pouvez utiliser le Telink Flasher pour flasher le firmware v3.5 actuellement pris en charge. Après le flashage, n'oubliez pas de définir le format de publicité ATC1441. L'application filtrera les appareils découverts par leur format de données (0x181A) et listera les appareils par leur nom.
+Application pour Xiaomi Temperature and Humidity Monitor Clock LYWSD02MM, Xiaomi Mijia LYWSD03MMC Temperature and Humidity et capteur de température et d'humidité Bluetooth Xiaomi MiJia.
 
-Un grand merci à Zsolt Reinhardt (développeur original de cette application), "Horakmartin" pour la contribution, et à Robert Klep pour l'implémentation des pilotes ZigBee également !
+Un grand merci à Zsolt Reinhardt (développeur original de cette application), "Horakmartin" pour sa contribution et Robert Klep pour avoir implémenté les pilotes ZigBee aussi !
