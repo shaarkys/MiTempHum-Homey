@@ -17,8 +17,8 @@ class MyDevice extends Device {
    * onInit is called when the device is initialized.
    */
   async onInit() {
-    this.log("Xiaomi BLE device has been initialized");
-    console.log(this.getData());
+    this.log("Xiaomi BLE ATC device has been initialized");
+    this.log(this.getData());
     this.addListener("updateTag", this.updateTag);
 
     // Get the initial temperature offset setting
@@ -29,7 +29,7 @@ class MyDevice extends Device {
    * onAdded is called when the user adds the device, called just after pairing.
    */
   async onAdded() {
-    this.log("Xiaomi BLE has been added");
+    this.log("Xiaomi BLE ATC has been added");
   }
 
   /**
@@ -41,7 +41,7 @@ class MyDevice extends Device {
    * @returns {Promise<string|void>} return a custom message that will be displayed
    */
   async onSettings({ oldSettings, newSettings, changedKeys }) {
-    this.log("Xiaomi BLE settings were changed");
+    this.log("Xiaomi BLE ATC settings were changed");
 
     if (changedKeys.includes("temperature_offset")) {
       this.temperatureOffset = newSettings.temperature_offset;
@@ -55,18 +55,18 @@ class MyDevice extends Device {
    * @param {string} name The new name
    */
   async onRenamed(name) {
-    this.log("Xiaomi BLE was renamed");
+    this.log("Xiaomi ATC BLE was renamed");
   }
 
   /**
    * onDeleted is called when the user deleted the device.
    */
   async onDeleted() {
-    this.log("Xiaomi BLE has been deleted");
+    this.log("Xiaomi ATC BLE has been deleted");
   }
 
   async updateTag(foundDevices) {
-    console.log(`Updating measurements ${this.getName()}`);
+    this.log(`Updating measurements ${this.getName()}`);
     let deviceData = this.getData();
     let settings = this.getSettings();
     let mac = this.getData();
@@ -80,19 +80,19 @@ class MyDevice extends Device {
     foundDevices.forEach((device) => {
       //this.log("Device Mac: ",device.address);
       if (device.address == mac["id"]) {
-        console.log("Match!", mac, device.address);
-        console.log("Service Data:", device.serviceData);
+        this.log("Match!", mac, device.address);
+        this.log("Service Data:", device.serviceData);
         const sdata = device.serviceData;
-        console.log("sdata:", sdata);
+        this.log("sdata:", sdata);
         sdata.forEach((uuid) => {
           if (uuid.uuid == "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid == "181a") {
             var datas = uuid["data"];
             const dattta = Buffer.from(uuid["data"], "hex");
-            console.log(device.localName);
-            console.log("BLE Temp: ", ((dattta[6] << 8) | dattta[7]) / 10, "Celsius");
-            console.log("BLE Hum: ", dattta[8], "%");
-            console.log("BLE Batt: ", dattta[9], "%");
-            console.log("");
+            this.log(device.localName);
+            this.log("BLE Temp: ", ((dattta[6] << 8) | dattta[7]) / 10, "Celsius");
+            this.log("BLE Hum: ", dattta[8], "%");
+            this.log("BLE Batt: ", dattta[9], "%");
+            this.log("");
             let temperature = ((dattta[6] << 8) | dattta[7]) / 10 + this.temperatureOffset;
             let humidity = dattta[8];
             let battery = dattta[9];
@@ -103,14 +103,14 @@ class MyDevice extends Device {
         });
       } else {
         //throw new Error("The device could not be found!");
-        //console.log("Xiaomi BLE devices not found !");
+        //this.log("Xiaomi BLE ATC devices not found !");
       }
     });
   }
 }
 function readTemperature(buffer) {
   const data = Buffer.from(uuid["data"], "hex");
-  console.log(((data[6] << 8) | data[7]) / 10), "readtemperature";
+  this.log(((data[6] << 8) | data[7]) / 10), "readtemperature";
   return ((data[6] << 8) | data[7]) / 10;
 }
 module.exports = MyDevice;

@@ -8,7 +8,7 @@ class MyDriver extends Driver {
    * onInit is called when the driver is initialized.
    */
   async onInit() {
-    this.log("BLE driver has been initialized");
+    this.log("ATC BLE driver has been initialized");
 
     // Check if any devices exist
     const devices = this.getDevices();
@@ -19,7 +19,7 @@ class MyDriver extends Driver {
       // Initiating device polling
       this.emit("poll");
     } else {
-      this.log("No LYWSD03MMC devices found. Polling is disabled.");
+      this.log("No ATC LYWSD03MMC devices found. Polling is disabled.");
       this.polling = false;
     }
   }
@@ -35,11 +35,11 @@ class MyDriver extends Driver {
 
     try {
       let devices = [];
-      this.log("Initiating BLE LYWSD03MMC discovery...");
+      this.log("Initiating BLE ATC LYWSD03MMC discovery...");
       const foundDevices = await this.homey.ble.discover([], 30000);
 
       if (foundDevices.length === 0) {
-        this.log("No BLE LYWSD03MMC devices found during discovery.");
+        this.log("No BLE ATC LYWSD03MMC devices found during discovery.");
       } else {
         this.log(`Found ${foundDevices.length} BLE LYWSD03MMC devices.`);
         foundDevices.forEach((device) => {
@@ -75,7 +75,7 @@ class MyDriver extends Driver {
 
   async pollDevice() {
     while (this.polling) {
-      this.log('Refreshing BLE devices');
+      this.log('Refreshing BLE ATC devices');
       let polling_interval = this.homey.settings.get('polling_interval');
       let scan_duration = this.homey.settings.get('scan_duration');
   
