@@ -26,13 +26,35 @@ class MyDevice extends Device {
   async onInit() {
     this.log("LYWSDCGQ/01ZM BLE device has been initialized - ", this.getData());
     // Reset all values
-    this.setCapabilityValue("measure_temperature", null);
-    this.setCapabilityValue("measure_humidity", null);
-    this.setCapabilityValue("measure_battery", null);
+    try {
+      await this.setCapabilityValue("measure_temperature", null);
+    } catch (err) {
+      this.error("Error setting 'measure_temperature':", err);
+    }
+    try {
+      await this.setCapabilityValue("measure_humidity", null);
+    } catch (err) {
+      this.error("Error setting 'measure_humidity':", err);
+    }
+    try {
+      await this.setCapabilityValue("measure_battery", null);
+    } catch (err) {
+      this.error("Error setting 'measure_battery':", err);
+    }
 
-    if (!this.hasCapability("measure_rssi")) await this.addCapability("measure_rssi");
+    if (!this.hasCapability("measure_rssi")) {
+      try {
+        await this.addCapability("measure_rssi");
+      } catch (err) {
+        this.error("Error adding 'measure_rssi' capability:", err);
+      }
+    }
 
-    this.setCapabilityValue("measure_rssi", null);
+    try {
+      await this.setCapabilityValue("measure_rssi", null);
+    } catch (err) {
+      this.error("Error setting 'measure_rssi':", err);
+    }
 
     // Get the initial temperature offset setting
     this.temperatureOffset = this.getSetting("temperature_offset") || 0;
@@ -50,7 +72,7 @@ class MyDevice extends Device {
   }
 
   /**
-   * onAdded is called when the user adds the device, called just after pairing.
+   * onAdded is called when the user adds the device.
    */
   async onAdded() {
     this.log("LYWSDCGQ/01ZM BLE has been added");
@@ -58,11 +80,6 @@ class MyDevice extends Device {
 
   /**
    * onSettings is called when the user updates the device's settings.
-   * @param {object} event the onSettings event data
-   * @param {object} event.oldSettings The old settings object
-   * @param {object} event.newSettings The new settings object
-   * @param {string[]} event.changedKeys An array of keys changed since the previous version
-   * @returns {Promise<string|void>} return a custom message that will be displayed
    */
   async onSettings({ oldSettings, newSettings, changedKeys }) {
     this.log("LYWSDCGQ/01ZM BLE settings were changed");
@@ -80,8 +97,6 @@ class MyDevice extends Device {
 
   /**
    * onRenamed is called when the user updates the device's name.
-   * This method can be used to synchronise the name to the device.
-   * @param {string} name The new name
    */
   async onRenamed(name) {
     this.log("LYWSDCGQ/01ZM BLE was renamed");
@@ -110,7 +125,6 @@ class MyDevice extends Device {
       const peripheral = await advertisement.connect();
       this.log(`Connected to device: ${uuid}`);
 
-      // Enable notifications by writing specific data if not already enabled
       const serviceUuid = "0000fe9500001000800000805f9b34fb";
       const characteristicUuid = "0000001000001000800000805f9b34fb";
       const enableNotificationsData = Buffer.from([0x01, 0x00]);
@@ -120,7 +134,6 @@ class MyDevice extends Device {
       const characteristic = await service.getCharacteristic(characteristicUuid);
       this.log(`Obtained characteristic: ${characteristicUuid}`);
 
-      // Check if notifications are already enabled
       const currentValue = await characteristic.read();
       this.log(`Current value of characteristic: ${currentValue.toString("hex")}`);
 
@@ -137,16 +150,34 @@ class MyDevice extends Device {
       this.log(`Device RSSI: ${rssi} dBm`);
 
       const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
-      //workaround even this shall be solved by oninit
-      if (!this.hasCapability("measure_rssi")) await this.addCapability("measure_rssi");
+      if (!this.hasCapability("measure_rssi")) {
+        try {
+          await this.addCapability("measure_rssi");
+        } catch (err) {
+          this.error("Error adding 'measure_rssi' capability:", err);
+        }
+      }
       this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
 
-      // Set the RSSI capability value
-      this.setCapabilityValue("measure_rssi", rssi);
+      try {
+        await this.setCapabilityValue("measure_rssi", rssi);
+      } catch (err) {
+        this.error("Error setting 'measure_rssi':", err);
+      }
 
       if (rssi < -80) {
-        this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
-        setTimeout(() => this.setWarning(null), 15000);
+        try {
+          await this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
+          setTimeout(async () => {
+            try {
+              await this.setWarning(null);
+            } catch (innerErr) {
+              this.error("Error clearing warning:", innerErr);
+            }
+          }, 15000);
+        } catch (err) {
+          this.error("Error setting warning for low RSSI:", err);
+        }
       }
 
       // Read firmware version
@@ -156,13 +187,20 @@ class MyDevice extends Device {
       const firmwareCharacteristic = await deviceInfoService.getCharacteristic(firmwareCharacteristicUuid);
       const firmwareData = await firmwareCharacteristic.read();
       this.log(`Firmware version: ${firmwareData.toString("utf-8")}`);
-
-      // No need to disconnect if we would like to read the data
-      // await peripheral.disconnect();
-      // this.log(`Disconnected from device: ${uuid}`);
     } catch (error) {
       this.log(`Failed to enable notifications: ${error}`);
-      setTimeout(() => this.setWarning(null), 95000, await this.setWarning(`${error}`));
+      try {
+        await this.setWarning(`${error}`);
+        setTimeout(async () => {
+          try {
+            await this.setWarning(null);
+          } catch (innerErr) {
+            this.error("Error clearing warning after failure:", innerErr);
+          }
+        }, 95000);
+      } catch (err) {
+        this.error("Error setting warning after enableNotifications error:", err);
+      }
     }
   }
 
@@ -174,9 +212,9 @@ class MyDevice extends Device {
     const deviceData = this.getData();
     const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
     let lastTempHumidityData = null;
-    this.setWarning(null);
 
     try {
+      await this.setWarning(null).catch(err => this.error("Error clearing warning before subscription:", err));
       const advertisement = await this.homey.ble.find(uuid);
       const peripheral = await advertisement.connect();
       this.log(`Connected to device: ${uuid}`);
@@ -185,18 +223,36 @@ class MyDevice extends Device {
       const rssi = advertisement.rssi;
       this.log(`Device RSSI: ${rssi} dBm`);
 
-      //workaround even this shall be solved by oninit
-      if (!this.hasCapability("measure_rssi")) await this.addCapability("measure_rssi");
+      if (!this.hasCapability("measure_rssi")) {
+        try {
+          await this.addCapability("measure_rssi");
+        } catch (err) {
+          this.error("Error adding 'measure_rssi' capability:", err);
+        }
+      }
       
-      // Set the RSSI capability value
-      this.setCapabilityValue("measure_rssi", rssi);
+      try {
+        await this.setCapabilityValue("measure_rssi", rssi);
+      } catch (err) {
+        this.error("Error setting 'measure_rssi':", err);
+      }
 
       const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
       this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
 
       if (rssi < -80) {
-        this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
-        setTimeout(() => this.setWarning(null), 15000);
+        try {
+          await this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
+          setTimeout(async () => {
+            try {
+              await this.setWarning(null);
+            } catch (innerErr) {
+              this.error("Error clearing warning after low RSSI:", innerErr);
+            }
+          }, 15000);
+        } catch (err) {
+          this.error("Error setting warning for low RSSI:", err);
+        }
       }
 
       const temperatureHumidityServiceUuid = "226c000064764566756266734470666d";
@@ -209,12 +265,11 @@ class MyDevice extends Device {
         const dataString = data.toString("hex");
         if (lastTempHumidityData !== dataString) {
           this.log("Received new notification temp/humidity: ", data);
-          this.updateTag(data);
+          this.updateTag(data).catch(err => this.error("Error updating tag:", err));
           lastTempHumidityData = dataString;
-        } else {
-          //  this.log("Duplicate notification received, ignoring.");
         }
       });
+
       // Read battery level
       const batteryServiceUuid = "0000180f00001000800000805f9b34fb";
       const batteryCharacteristicUuid = "00002a1900001000800000805f9b34fb";
@@ -228,24 +283,39 @@ class MyDevice extends Device {
       const battery = batteryData.readUInt8(0);
       this.log(`Battery level: ${battery}%`);
       if (battery >= 0 && battery <= 100) {
-        this.setCapabilityValue("measure_battery", battery);
+        try {
+          await this.setCapabilityValue("measure_battery", battery);
+        } catch (err) {
+          this.error("Error setting 'measure_battery':", err);
+        }
       }
 
       peripheral.once("disconnect", async () => {
         this.log(`Disconnected from device: ${uuid}, will reconnect in ${this.reconnectInterval} seconds`);
-        //      await this.delay(this.reconnectInterval);
-        //        await this.subscribeToBLENotifications();
       });
 
       this.peripheral = peripheral; // Save the peripheral to unsubscribe later
 
       this.log(`Subscribed to notifications for device: ${uuid}`);
-      this.setWarning(null);
+      try {
+        await this.setWarning(null);
+      } catch (err) {
+        this.error("Error clearing warning after subscription:", err);
+      }
     } catch (error) {
       this.log(`Failed to subscribe to notifications: ${error}`);
-      setTimeout(() => this.setWarning(null), 65000, await this.setWarning(`${error}`));
-      // await this.delay(this.reconnectInterval);
-      // await this.subscribeToBLENotifications();
+      try {
+        await this.setWarning(`${error}`);
+        setTimeout(async () => {
+          try {
+            await this.setWarning(null);
+          } catch (innerErr) {
+            this.error("Error clearing warning after subscription failure:", innerErr);
+          }
+        }, 65000);
+      } catch (err) {
+        this.error("Error setting warning after subscribeToBLENotifications error:", err);
+      }
     }
   }
 
@@ -291,7 +361,11 @@ class MyDevice extends Device {
     const dataString = data.toString("ascii").trim();
     const match = dataString.match(/T=([\d.]+)\s+H=([\d.]+)/);
 
-    this.setWarning(null);
+    try {
+      await this.setWarning(null);
+    } catch (err) {
+      this.error("Error clearing warning before updating measurements:", err);
+    }
 
     if (match) {
       const temperature = parseFloat(match[1]) + this.temperatureOffset;
@@ -303,7 +377,11 @@ class MyDevice extends Device {
         if (temperature < -20 || temperature > 50) {
           this.log(`Ignoring temperature reading: ${temperature}°C`);
         } else {
-          this.setCapabilityValue("measure_temperature", temperature);
+          try {
+            await this.setCapabilityValue("measure_temperature", temperature);
+          } catch (err) {
+            this.error("Error setting 'measure_temperature' in updateTag:", err);
+          }
         }
       }
 
@@ -311,15 +389,27 @@ class MyDevice extends Device {
         if (humidity < 10 || humidity > 99) {
           this.log(`Ignoring humidity reading: ${humidity}%`);
         } else {
-          this.setCapabilityValue("measure_humidity", humidity);
+          try {
+            await this.setCapabilityValue("measure_humidity", humidity);
+          } catch (err) {
+            this.error("Error setting 'measure_humidity' in updateTag:", err);
+          }
         }
       }
     } else {
       this.log(`Unexpected data format: ${dataString}`);
-      /* setTimeout(() => this.setWarning(null), 55000, await this.setWarning(`${error}`)); 
-      row above caused "ReferenceError: error is not defined"
-      */
-      setTimeout(() => this.setWarning(null), 55000, await this.setWarning(`Unexpected data format`));
+      try {
+        await this.setWarning(`Unexpected data format`);
+        setTimeout(async () => {
+          try {
+            await this.setWarning(null);
+          } catch (innerErr) {
+            this.error("Error clearing warning after unexpected data format:", innerErr);
+          }
+        }, 55000);
+      } catch (err) {
+        this.error("Error setting warning for unexpected data format:", err);
+      }
     }
   }
 
@@ -327,7 +417,7 @@ class MyDevice extends Device {
    * Poll device periodically
    */
   pollDevice() {
-    this.pollingInterval = setInterval(() => this.emit("poll"), this.reconnectInterval * 1000); // Poll every 60 seconds
+    this.pollingInterval = setInterval(() => this.emit("poll"), this.reconnectInterval * 1000);
   }
 }
 

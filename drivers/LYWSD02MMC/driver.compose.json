@@ -33,7 +33,7 @@
   },
   "energy": {
     "batteries": [
-      "AAA"
+      "CR2032","CR2032"
     ]
   },
   "pair": [
