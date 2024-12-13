@@ -76,5 +76,8 @@
   },
   "1.2.20": {
     "en": "Fix for ATC LYWSD03MMC negative temperatures"
+  },
+  "1.2.21": {
+    "en": "Fix for ATC LYWSD03MMC negative temperatures"
   }
 }
