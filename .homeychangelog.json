@@ -82,5 +82,8 @@
   },
   "1.2.22": {
     "en": "Additional logging"
+  },
+  "1.2.23": {
+    "en": "Fix for ATC LYWSD03MMC negative temperatures, log less data/noise"
   }
 }
