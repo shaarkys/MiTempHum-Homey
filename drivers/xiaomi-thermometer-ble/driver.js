@@ -96,7 +96,7 @@ class MyDriver extends Driver {
           await delay(1);
         } else {
           devices.forEach((device) => {
-            if (device && device.isAvailable()) {
+            if (device && device.getAvailable()) {
               // Check if device is available
               device.emit("updateTag", foundDevices);
             } else {
