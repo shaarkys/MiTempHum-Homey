@@ -81,14 +81,16 @@ class MyDevice extends Device {
       foundDevices.forEach((device) => {
         if (device.address === mac["id"]) {
           this.log("Match!", mac, device.address);
-          this.log("Service Data:", device.serviceData);
+          //this.log("Service Data:", device.serviceData);
           const sdata = device.serviceData;
           this.log("sdata:", sdata);
           sdata.forEach((uuid) => {
             if (uuid.uuid === "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid === "181a") {
               const dattta = Buffer.from(uuid["data"], "hex");
-              this.log(`Parsed Buffer from hex: ${dattta.toString('hex')}`);
-              const rawTemp = (dattta[6] << 8) | dattta[7] / 10 ;
+              this.log(`Parsed Buffer from hex: ${dattta.toString("hex")}`);
+              // incorrect for negative temps
+              // const rawTemp = ((dattta[6] << 8) | dattta[7]) / 10;
+              const rawTemp = dattta.readInt16BE(6) / 10;
               const temperature = rawTemp + this.temperatureOffset;
               const humidity = dattta[8];
               const battery = dattta[9];
@@ -99,7 +101,7 @@ class MyDevice extends Device {
             }
           });
         } else {
-          this.log(`Device ${device.localName} does not match with current device ID.`);
+          //     this.log(`Device ${device.localName} does not match with current device ID.`);
         }
       });
     } catch (error) {
