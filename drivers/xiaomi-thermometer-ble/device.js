@@ -87,19 +87,12 @@ class MyDevice extends Device {
           sdata.forEach((uuid) => {
             if (uuid.uuid === "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid === "181a") {
               const dattta = Buffer.from(uuid["data"], "hex");
-              this.log(device.localName);
-
-              // Correctly parse the temperature as a signed 16-bit integer
-              const rawTemp = dattta.readInt16LE(6); // Adjust the offset if necessary
-              const temperature = rawTemp / 10 + this.temperatureOffset;
+              this.log(`Parsed Buffer from hex: ${dattta.toString('hex')}`);
+              const rawTemp = (dattta[6] << 8) | dattta[7] / 10 ;
+              const temperature = rawTemp + this.temperatureOffset;
               const humidity = dattta[8];
               const battery = dattta[9];
-
-              this.log("BLE Temp: ", temperature, "Celsius");
-              this.log("BLE Hum: ", humidity, "%");
-              this.log("BLE Batt: ", battery, "%");
-              this.log("");
-
+              this.log(`${device.localName} - Temp: ${temperature}°C, Humidity: ${humidity}%, Battery: ${battery}%`);
               this.setCapabilityValue("measure_temperature", temperature).catch((error) => this.error("Error setting temperature:", error));
               this.setCapabilityValue("measure_humidity", humidity).catch((error) => this.error("Error setting humidity:", error));
               this.setCapabilityValue("measure_battery", battery).catch((error) => this.error("Error setting battery:", error));
