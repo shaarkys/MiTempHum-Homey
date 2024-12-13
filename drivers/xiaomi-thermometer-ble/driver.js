@@ -10,17 +10,24 @@ class MyDriver extends Driver {
   async onInit() {
     this.log("ATC BLE driver has been initialized");
 
-    // Check if any devices exist
-    const devices = this.getDevices();
-    if (devices.length > 0) {
-      this.polling = true;
-      this.addListener("poll", this.pollDevice);
+    // Initial check for devices
+    this.managePolling();
 
-      // Initiating device polling
+    // Listen for device add/remove events to manage polling dynamically
+    this.on("device.added", this.managePolling.bind(this));
+    this.on("device.removed", this.managePolling.bind(this));
+  }
+
+  managePolling() {
+    const devices = this.getDevices();
+    if (devices.length > 0 && !this.polling) {
+      this.polling = true;
+      this.addListener("poll", this.pollDevice.bind(this));
       this.emit("poll");
-    } else {
-      this.log("No ATC LYWSD03MMC devices found. Polling is disabled.");
+      this.log("Started polling BLE ATC devices.");
+    } else if (devices.length === 0 && this.polling) {
       this.polling = false;
+      this.log("No ATC LYWSD03MMC devices found. Polling is disabled.");
     }
   }
 
@@ -75,36 +82,39 @@ class MyDriver extends Driver {
 
   async pollDevice() {
     while (this.polling) {
-      this.log('Refreshing BLE ATC devices');
-      let polling_interval = this.homey.settings.get('polling_interval');
-      let scan_duration = this.homey.settings.get('scan_duration');
-  
-      if (!polling_interval) polling_interval = 30;
-      if (!scan_duration) scan_duration = 20;
-  
+      this.log("Refreshing BLE ATC devices");
+      let polling_interval = this.homey.settings.get("polling_interval") || 30;
+      let scan_duration = this.homey.settings.get("scan_duration") || 20;
+
       let devices = this.getDevices();
-  
+
       try {
         const foundDevices = await this.homey.ble.discover([], scan_duration * 1000);
-        this.log('Scan complete!');
+        this.log("Scan complete!");
         if (foundDevices.length === 0) {
-          this.log('No new advertisements were detected. Retrying in 1 second.');
+          this.log("No new advertisements were detected. Retrying in 1 second.");
           await delay(1);
         } else {
-          devices.forEach(device => device.emit('updateTag', foundDevices));
+          devices.forEach((device) => {
+            if (device && device.isAvailable()) {
+              // Check if device is available
+              device.emit("updateTag", foundDevices);
+            } else {
+              this.log(`Device ${device.getName()} is not available.`);
+            }
+          });
           await delay(polling_interval);
         }
       } catch (error) {
-        if (error.message === 'Operation already in progress') {
-          this.log('BLE discovery operation already in progress. Retrying in 1 second.');
+        if (error.message === "Operation already in progress") {
+          this.log("BLE discovery operation already in progress. Retrying in 1 second.");
           await delay(1);
         } else {
-          this.error('Error during BLE discovery:', error);
+          this.error("Error during BLE discovery:", error);
         }
       }
     }
   }
-  
 }
 
 module.exports = MyDriver;

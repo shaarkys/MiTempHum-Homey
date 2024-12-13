@@ -66,46 +66,52 @@ class MyDevice extends Device {
   }
 
   async updateTag(foundDevices) {
-    this.log(`Updating measurements ${this.getName()}`);
-    let deviceData = this.getData();
-    let settings = this.getSettings();
-    let mac = this.getData();
+    try {
+      this.log(`Updating measurements ${this.getName()}`);
+      let deviceData = this.getData();
+      let settings = this.getSettings();
+      let mac = this.getData();
 
       // Add safeguard check if device is still available
-  if (!this.getAvailable()) {
-    this.log(`Device ${this.getName()} is no longer available.`);
-    return;
-  }
-  
-    foundDevices.forEach((device) => {
-      //this.log("Device Mac: ",device.address);
-      if (device.address == mac["id"]) {
-        this.log("Match!", mac, device.address);
-        this.log("Service Data:", device.serviceData);
-        const sdata = device.serviceData;
-        this.log("sdata:", sdata);
-        sdata.forEach((uuid) => {
-          if (uuid.uuid == "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid == "181a") {
-            var datas = uuid["data"];
-            const dattta = Buffer.from(uuid["data"], "hex");
-            this.log(device.localName);
-            this.log("BLE Temp: ", ((dattta[6] << 8) | dattta[7]) / 10, "Celsius");
-            this.log("BLE Hum: ", dattta[8], "%");
-            this.log("BLE Batt: ", dattta[9], "%");
-            this.log("");
-            let temperature = ((dattta[6] << 8) | dattta[7]) / 10 + this.temperatureOffset;
-            let humidity = dattta[8];
-            let battery = dattta[9];
-            this.setCapabilityValue("measure_temperature", temperature);
-            this.setCapabilityValue("measure_humidity", humidity);
-            this.setCapabilityValue("measure_battery", battery);
-          }
-        });
-      } else {
-        //throw new Error("The device could not be found!");
-        //this.log("Xiaomi BLE ATC devices not found !");
+      if (!this.getAvailable()) {
+        this.log(`Device ${this.getName()} is no longer available.`);
+        return;
       }
-    });
+
+      foundDevices.forEach((device) => {
+        if (device.address === mac["id"]) {
+          this.log("Match!", mac, device.address);
+          this.log("Service Data:", device.serviceData);
+          const sdata = device.serviceData;
+          this.log("sdata:", sdata);
+          sdata.forEach((uuid) => {
+            if (uuid.uuid === "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid === "181a") {
+              const dattta = Buffer.from(uuid["data"], "hex");
+              this.log(device.localName);
+
+              // Correctly parse the temperature as a signed 16-bit integer
+              const rawTemp = dattta.readInt16LE(6); // Adjust the offset if necessary
+              const temperature = rawTemp / 10 + this.temperatureOffset;
+              const humidity = dattta[8];
+              const battery = dattta[9];
+
+              this.log("BLE Temp: ", temperature, "Celsius");
+              this.log("BLE Hum: ", humidity, "%");
+              this.log("BLE Batt: ", battery, "%");
+              this.log("");
+
+              this.setCapabilityValue("measure_temperature", temperature).catch((error) => this.error("Error setting temperature:", error));
+              this.setCapabilityValue("measure_humidity", humidity).catch((error) => this.error("Error setting humidity:", error));
+              this.setCapabilityValue("measure_battery", battery).catch((error) => this.error("Error setting battery:", error));
+            }
+          });
+        } else {
+          this.log(`Device ${device.localName} does not match with current device ID.`);
+        }
+      });
+    } catch (error) {
+      this.error("Error in updateTag:", error);
+    }
   }
 }
 function readTemperature(buffer) {
