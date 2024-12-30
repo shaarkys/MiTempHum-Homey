@@ -91,7 +91,7 @@ class MyDevice extends Device {
               // incorrect for negative temps
               // const rawTemp = ((dattta[6] << 8) | dattta[7]) / 10;
               const rawTemp = dattta.readInt16BE(6) / 10;
-              const temperature = rawTemp + this.temperatureOffset;
+              const temperature = rawTemp + (this.temperatureOffset || 0);
               const humidity = dattta[8];
               const battery = dattta[9];
               this.log(`${device.localName} - Temp: ${temperature}°C, Humidity: ${humidity}%, Battery: ${battery}%`);

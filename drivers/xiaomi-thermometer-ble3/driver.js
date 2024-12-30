@@ -21,51 +21,55 @@ class XiaomiThermometerDriver extends Driver {
   /**
    * List devices for pairing
    */
-/**
+  /**
    * onPairListDevices is called when a user is adding a device
    * and the 'list_devices' view is called.
    * This should return an array with the data of devices that are available for pairing.
    */
-async onPairListDevices() {
-  this.log("onPairListDevices method called for BLE device discovery");
+  async onPairListDevices() {
+    this.log("onPairListDevices method called for BLE device discovery");
 
-  try {
-    const advertisements = await this.homey.ble.discover([], 30000);
+    try {
+      const advertisements = await this.homey.ble.discover([], 30000);
 
-    if (advertisements.length === 0) {
-      this.log("No BLE devices found during discovery.");
-    } else {
-      this.log(`Found ${advertisements.length} BLE devices.`);
-      // Log details of each discovered device
-      advertisements.forEach(ad => {
-        this.log(`Scanned Device - MAC: ${ad.address}, Name: ${ad.localName || "Unknown"}, UUIDs: ${ad.serviceUuids.join(", ")}`);
-      });
+      if (!advertisements || advertisements.length === 0) {
+        this.log("No BLE devices found during discovery.");
+      } else {
+        this.log(`Found ${advertisements.length} BLE devices.`);
+        // Log details of each discovered device
+        advertisements.forEach(ad => {
+          const serviceUuids = ad.serviceUuids ? ad.serviceUuids.join(", ") : "None";
+          this.log(`Scanned Device - MAC: ${ad.address}, Name: ${ad.localName || "Unknown"}, UUIDs: ${serviceUuids}`);
+        });
+      }
+
+      const devices = advertisements
+        .filter((advertisement) => 
+          advertisement.serviceUuids && 
+          typeof advertisement.localName === 'string' && 
+          advertisement.localName.includes("LYWSD03")
+        )
+        .map((advertisement) => {
+          // Log the devices that will be added
+          this.log(`Device added for pairing - MAC: ${advertisement.address}, Name: ${advertisement.localName || `Device ${advertisement.address}`}, UUID: ${advertisement.uuid}`);
+          return {
+            name: advertisement.localName || `Device ${advertisement.address}`,
+            data: {
+              id: advertisement.address,
+            },
+            store: {
+              peripheralUuid: advertisement.uuid,
+            },
+          };
+        });
+
+      this.log(`Total devices added for pairing: ${devices.length}`);
+      return devices;
+    } catch (error) {
+      this.error("Error during BLE device listing:", error);
+      throw error;
     }
-
-    const devices = advertisements
-      .filter((advertisement) => advertisement.serviceUuids && advertisement.localName.includes("LYWSD03"))
-      .map((advertisement) => {
-        // Log the devices that will be added
-        this.log(`Device added for pairing - MAC: ${advertisement.address}, Name: ${advertisement.localName || `Device ${advertisement.address}`}, UUID: ${advertisement.uuid}`);
-        return {
-          name: advertisement.localName || `Device ${advertisement.address}`,
-          data: {
-            id: advertisement.address,
-          },
-          store: {
-            peripheralUuid: advertisement.uuid,
-          },
-        };
-      });
-
-    this.log(`Total devices added for pairing: ${devices.length}`);
-    return devices;
-  } catch (error) {
-    this.error("Error during BLE device listing:", error);
-    throw error;
   }
-}
-
 }
 
 module.exports = XiaomiThermometerDriver;
