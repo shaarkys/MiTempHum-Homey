@@ -85,5 +85,8 @@
   },
   "1.2.23": {
     "en": "Fix for ATC LYWSD03MMC negative temperatures, log less data/noise"
+  },
+  "1.2.24": {
+    "en": "Fix for LYWSD03MMC BLE not ATC - undefined error"
   }
 }
