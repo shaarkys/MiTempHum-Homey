@@ -88,5 +88,8 @@
   },
   "1.2.24": {
     "en": "Fix for LYWSD03MMC BLE not ATC - undefined error"
+  },
+  "1.2.25": {
+    "en": "Minor internal adjustment"
   }
 }
