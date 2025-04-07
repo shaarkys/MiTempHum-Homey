@@ -34,13 +34,19 @@ class LYWSD02MMC_Driver extends Driver {
       } else {
         this.log(`Found ${advertisements.length} LYWSD02MMCs.`);
         // Log details of each discovered device
-        advertisements.forEach(ad => {
+        advertisements.forEach((ad) => {
           this.log(`Scanned Device - MAC: ${ad.address}, Name: ${ad.localName || "Unknown"}, UUIDs: ${ad.serviceUuids.join(", ")}`);
         });
       }
 
       const devices = advertisements
-        .filter((advertisement) => advertisement.serviceUuids && advertisement.serviceUuids.includes("0000181a00001000800000805f9b34fb"))
+        .filter((advertisement) => {
+          // Check if serviceUuids exists
+          if (!advertisement.serviceUuids) return false;
+
+          // Check for both long and short UUID formats
+          return advertisement.serviceUuids.some((uuid) => uuid === "0000181a00001000800000805f9b34fb" || uuid === "181a" || uuid === "0000181a-0000-1000-8000-00805f9b34fb");
+        })
         .map((advertisement) => {
           // Log the devices that will be added
           this.log(`Device added for pairing - MAC: ${advertisement.address}, Name: ${advertisement.localName || `Device ${advertisement.address}`}, UUID: ${advertisement.uuid}`);

@@ -17,7 +17,7 @@ class MyDevice extends Device {
    * Delay function
    */
   delay(s) {
-    return new Promise((resolve) => setTimeout(resolve, 1000 * s));
+    return new Promise((resolve) => this.homey.setTimeout(resolve, 1000 * s));
   }
 
   /**
@@ -324,6 +324,12 @@ class MyDevice extends Device {
    */
   async stopBLESubscription() {
     try {
+      // Clear the disconnectTimeout when we initiate the disconnect
+      if (this.disconnectTimeout) {
+        this.homey.clearTimeout(this.disconnectTimeout);
+        this.disconnectTimeout = null;
+      }
+      
       if (this.peripheral) {
         await this.unsubscribeFromBLENotifications(this.peripheral);
       }

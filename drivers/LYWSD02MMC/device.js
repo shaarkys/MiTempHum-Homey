@@ -17,7 +17,7 @@ class LYWSD02MMC_device extends Device {
    * Delay function
    */
   delay(s) {
-    return new Promise((resolve) => setTimeout(resolve, 1000 * s));
+    return new Promise((resolve) => this.homey.setTimeout(resolve, 1000 * s));
   }
 
   /**
@@ -169,7 +169,7 @@ class LYWSD02MMC_device extends Device {
 
       if (rssi < -80) {
         this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
-        setTimeout(() => this.setWarning(null), 15000);
+        this.homey.setTimeout(() => this.setWarning(null), 15000);
       }
 
       const deviceInformationServiceUuid = "0000180a00001000800000805f9b34fb";
@@ -178,7 +178,6 @@ class LYWSD02MMC_device extends Device {
       const firmwareCharacteristic = await deviceInfoService.getCharacteristic(firmwareCharacteristicUuid);
       const firmwareData = await firmwareCharacteristic.read();
       this.log(`Firmware version: ${firmwareData.toString("utf-8")}`);
-
     } catch (error) {
       this.log(`Failed to enable notifications: ${error}`);
       setTimeout(() => this.setWarning(null), 95000, await this.setWarning(`${error}`));
@@ -237,7 +236,7 @@ class LYWSD02MMC_device extends Device {
 
       if (rssi < -80) {
         this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
-        setTimeout(() => this.setWarning(null), 15000);
+        this.homey.setTimeout(() => this.setWarning(null), 15000);
       }
 
       // Updated UUIDs based on Python implementation
@@ -288,7 +287,9 @@ class LYWSD02MMC_device extends Device {
       this.setWarning(null);
     } catch (error) {
       this.log(`Failed to subscribe to notifications: ${error}`);
-      setTimeout(() => this.setWarning(null), 65000, await this.setWarning(`${error}`));
+      await this.stopBLESubscription();
+      await this.setWarning(`${error}`);
+      this.homey.setTimeout(() => this.setWarning(null), 65000);
     }
   }
 
@@ -297,8 +298,15 @@ class LYWSD02MMC_device extends Device {
    */
   async stopBLESubscription() {
     try {
+      // Clear any timeouts if you're using Homey.setTimeout
+      if (this.disconnectTimeout) {
+        this.homey.clearTimeout(this.disconnectTimeout);
+        this.disconnectTimeout = null;
+      }
+
       if (this.peripheral) {
         await this.unsubscribeFromBLENotifications(this.peripheral);
+        this.peripheral = null; // Clear the peripheral reference
       }
       this.log("Stopped BLE subscription");
     } catch (error) {
@@ -337,7 +345,7 @@ class LYWSD02MMC_device extends Device {
 
       const temperature = temperatureRaw / 100 + this.temperatureOffset;
 
-      this.log(`LYWSDCGQ temperature: ${temperature}°C, Humidity: ${humidity}%`);
+      this.log(`LYWSD02 temperature: ${temperature}°C, Humidity: ${humidity}%`);
 
       this.setWarning(null);
 
