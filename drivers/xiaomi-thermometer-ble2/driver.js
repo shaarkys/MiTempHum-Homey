@@ -2,6 +2,8 @@
 
 const { Driver } = require("homey");
 
+const normalizeUuid = uuid => (uuid || "").toLowerCase().replace(/-/g, "");
+
 class MyDriver extends Driver {
   /**
    * Override the log method to customize log format
@@ -28,32 +30,31 @@ class MyDriver extends Driver {
 
     try {
       const advertisements = await this.homey.ble.discover([], 30000);
+      const seen = new Set();
+      const devices = [];
 
-      if (advertisements.length === 0) {
-        this.log("No BLE devices found during discovery.");
-      } else {
-        this.log(`Found ${advertisements.length} BLE devices.`);
-        // Log details of each discovered device
-        advertisements.forEach(ad => {
-          this.log(`Scanned Device - MAC: ${ad.address}, Name: ${ad.localName || "Unknown"}, UUIDs: ${ad.serviceUuids.join(", ")}`);
-        });
-      }
+      this.log(`Scanned ${advertisements.length} BLE advertisements for ATC.`);
 
-      const devices = advertisements
-        .filter((advertisement) => advertisement.serviceUuids && advertisement.serviceUuids.includes("0000180f00001000800000805f9b34fb"))
-        .map((advertisement) => {
-          // Log the devices that will be added
-          this.log(`Device added for pairing - MAC: ${advertisement.address}, Name: ${advertisement.localName || `Device ${advertisement.address}`}, UUID: ${advertisement.uuid}`);
-          return {
-            name: advertisement.localName || `Device ${advertisement.address}`,
-            data: {
-              id: advertisement.address,
-            },
-            store: {
-              peripheralUuid: advertisement.uuid,
-            },
-          };
+      advertisements.forEach(advertisement => {
+        if (!advertisement.address || seen.has(advertisement.address)) return;
+
+        const serviceUuids = advertisement.serviceUuids || [];
+        const has181a =
+          serviceUuids.some(u => normalizeUuid(u).includes("181a")) ||
+          (advertisement.serviceData || []).some(s => normalizeUuid(s.uuid).includes("181a"));
+
+        const name = advertisement.localName || "";
+        const looksAtc = name.toUpperCase().startsWith("ATC_");
+        const hasServiceData = (advertisement.serviceData || []).length > 0;
+        if (!has181a && !looksAtc && !hasServiceData) return;
+
+        seen.add(advertisement.address);
+        devices.push({
+          name: name || `Device ${advertisement.address}`,
+          data: { id: advertisement.address },
+          store: { peripheralUuid: advertisement.uuid },
         });
+      });
 
       this.log(`Total devices added for pairing: ${devices.length}`);
       return devices;

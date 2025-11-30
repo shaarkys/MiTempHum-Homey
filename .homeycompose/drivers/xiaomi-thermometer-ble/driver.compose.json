@@ -1,0 +1,42 @@
+{
+  "id": "xiaomi-thermometer-ble",
+  "name": {
+    "en": "Xiaomi Mi Temperature and Humidity Monitor (BLE)"
+  },
+  "class": "sensor",
+  "capabilities": [
+    "measure_temperature",
+    "measure_humidity",
+    "measure_battery"
+  ],
+  "platforms": [
+    "local"
+  ],
+  "connectivity": [
+    "ble"
+  ],
+  "images": {
+    "small": "{{driverAssetsPath}}/images/small.png",
+    "large": "{{driverAssetsPath}}/images/large.png",
+    "xlarge": "{{driverAssetsPath}}/images/xlarge.png"
+  ],
+  "energy": {
+    "batteries": [
+      "CR2032"
+    ]
+  },
+  "pair": [
+    {
+      "id": "list_devices",
+      "template": "list_devices",
+      "timeout": 20000,
+      "navigation": {
+        "next": "add_devices"
+      }
+    },
+    {
+      "id": "add_devices",
+      "template": "add_devices"
+    }
+  ]
+}
