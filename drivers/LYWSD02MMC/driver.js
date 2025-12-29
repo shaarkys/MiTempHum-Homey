@@ -1,6 +1,39 @@
 "use strict";
 
 const { Driver } = require("homey");
+const normalizeUuid = (uuid) => (uuid || "").toLowerCase().replace(/-/g, "");
+const UUID_181A_LONG = "0000181a00001000800000805f9b34fb";
+const UUID_181A_SHORT = "181a";
+const UUID_FE95_LONG = "0000fe9500001000800000805f9b34fb";
+const UUID_FE95_SHORT = "fe95";
+const UUID_FEF5_LONG = "0000fef500001000800000805f9b34fb";
+const UUID_FEF5_SHORT = "fef5";
+const DISCOVERY_WAIT_MS = 9500;
+const DISCOVERY_CACHE_TTL_MS = 30000;
+const DISCOVERY_SERVICE_UUIDS = [UUID_181A_LONG, UUID_FEF5_LONG, UUID_FE95_LONG];
+const isUuid181a = (uuid) => {
+  const normalized = normalizeUuid(uuid);
+  return normalized === UUID_181A_SHORT || normalized === UUID_181A_LONG;
+};
+const isUuidFe95 = (uuid) => {
+  const normalized = normalizeUuid(uuid);
+  return normalized === UUID_FE95_SHORT || normalized === UUID_FE95_LONG;
+};
+const isUuidFef5 = (uuid) => {
+  const normalized = normalizeUuid(uuid);
+  return normalized === UUID_FEF5_SHORT || normalized === UUID_FEF5_LONG;
+};
+const withTimeout = (promise, ms) => {
+  let timer;
+  return Promise.race([
+    promise.then((value) => ({ value, timedOut: false })),
+    new Promise((resolve) => {
+      timer = setTimeout(() => resolve({ value: null, timedOut: true }), ms);
+    }),
+  ]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+};
 
 class LYWSD02MMC_Driver extends Driver {
   /**
@@ -24,39 +57,82 @@ class LYWSD02MMC_Driver extends Driver {
    * This should return an array with the data of devices that are available for pairing.
    */
   async onPairListDevices() {
-    this.log("onPairListDevices method called for LYWSD02MMC discovery");
+    this.log(`onPairListDevices method called for LYWSD02MMC discovery (wait: ${DISCOVERY_WAIT_MS}ms, filter: ${DISCOVERY_SERVICE_UUIDS.join(", ")})`);
 
     try {
-      const advertisements = await this.homey.ble.discover([], 30000);
+      if (!this._discoveryPromise) {
+        this._discoveryPromise = this.homey.ble.discover(DISCOVERY_SERVICE_UUIDS)
+          .then((ads) => {
+            this._lastAdvertisements = Array.isArray(ads) ? ads : [];
+            this._lastDiscoveryAt = Date.now();
+            return this._lastAdvertisements;
+          })
+          .catch((error) => {
+            this.error("Error during BLE discovery:", error);
+            return null;
+          })
+          .finally(() => {
+            this._discoveryPromise = null;
+          });
+      }
 
-      if (advertisements.length === 0) {
-        this.log("No LYWSD02MMCs found during discovery.");
+      const discoveryPromise = this._discoveryPromise || Promise.resolve(null);
+      const { value, timedOut } = await withTimeout(discoveryPromise, DISCOVERY_WAIT_MS);
+      const cacheAge = this._lastDiscoveryAt ? Date.now() - this._lastDiscoveryAt : Number.POSITIVE_INFINITY;
+      const cachedAdvertisements = cacheAge <= DISCOVERY_CACHE_TTL_MS ? this._lastAdvertisements : [];
+      const advertisements = Array.isArray(value) ? value : cachedAdvertisements;
+
+      if (timedOut) {
+        this.log(`BLE discovery did not finish within ${DISCOVERY_WAIT_MS}ms; using cached results.`);
+      }
+
+      if (!advertisements || advertisements.length === 0) {
+        this.log(timedOut ? "No cached BLE devices available yet." : "No BLE devices found during discovery.");
       } else {
-        this.log(`Found ${advertisements.length} LYWSD02MMCs.`);
+        this.log(`Found ${advertisements.length} BLE devices.`);
         // Log details of each discovered device
         advertisements.forEach((ad) => {
-          this.log(`Scanned Device - MAC: ${ad.address}, Name: ${ad.localName || "Unknown"}, UUIDs: ${ad.serviceUuids.join(", ")}`);
+          const serviceUuids = Array.isArray(ad.serviceUuids) ? ad.serviceUuids.join(", ") : "None";
+          const serviceDataUuids = Array.isArray(ad.serviceData)
+            ? ad.serviceData
+              .map((entry) => entry && entry.uuid)
+              .filter(Boolean)
+              .join(", ")
+            : "";
+          const serviceDataLabel = serviceDataUuids.length > 0 ? serviceDataUuids : "None";
+          this.log(`Scanned Device - MAC: ${ad.address}, Name: ${ad.localName || "Unknown"}, UUIDs: ${serviceUuids}, Service Data UUIDs: ${serviceDataLabel}`);
         });
       }
 
       const devices = advertisements
         .filter((advertisement) => {
-          // Check if serviceUuids exists
-          if (!advertisement.serviceUuids) return false;
+          const serviceUuids = Array.isArray(advertisement.serviceUuids) ? advertisement.serviceUuids : [];
+          const serviceData = Array.isArray(advertisement.serviceData) ? advertisement.serviceData : [];
+          const name = typeof advertisement.localName === "string" ? advertisement.localName : "";
+          const isLywsd02Name = name.toLowerCase().includes("lywsd02");
+          const has181a = serviceUuids.some(isUuid181a) || serviceData.some((entry) => isUuid181a(entry.uuid));
+          const hasFef5 = serviceUuids.some(isUuidFef5) || serviceData.some((entry) => isUuidFef5(entry.uuid));
 
-          // Check for both long and short UUID formats
-          return advertisement.serviceUuids.some((uuid) => uuid === "0000181a00001000800000805f9b34fb" || uuid === "181a" || uuid === "0000181a-0000-1000-8000-00805f9b34fb");
+          // Check for service UUIDs or service data, since some bridges omit advertised UUIDs
+          return (
+            has181a ||
+            hasFef5 ||
+            isLywsd02Name ||
+            (serviceUuids.some(isUuidFe95) || serviceData.some((entry) => isUuidFe95(entry.uuid))) && isLywsd02Name
+          );
         })
         .map((advertisement) => {
           // Log the devices that will be added
+          const deviceId = advertisement.uuid || advertisement.address;
           this.log(`Device added for pairing - MAC: ${advertisement.address}, Name: ${advertisement.localName || `Device ${advertisement.address}`}, UUID: ${advertisement.uuid}`);
           return {
             name: advertisement.localName || `Device ${advertisement.address}`,
             data: {
-              id: advertisement.address,
+              id: deviceId,
             },
             store: {
               peripheralUuid: advertisement.uuid,
+              address: advertisement.address,
             },
           };
         });

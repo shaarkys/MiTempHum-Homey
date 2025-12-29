@@ -40,6 +40,9 @@ class LYWSD02MMC_device extends Device {
 
       // Get the reconnect interval setting, default to 5 minutes
       this.reconnectInterval = this.getSetting("reconnect_interval") || 5 * 60;
+      this.notificationTimeoutMs = 10000;
+      this.subscriptionInProgress = false;
+      this.notificationTimeout = null;
 
       // Enable notifications and subscribe to them
       // not working / not required ?
@@ -127,10 +130,11 @@ class LYWSD02MMC_device extends Device {
     this.log("Enabling notifications for temperature, humidity, and battery");
     const deviceData = this.getData();
     const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
+    let peripheral;
 
     try {
       const advertisement = await this.homey.ble.find(uuid);
-      const peripheral = await advertisement.connect();
+      peripheral = await advertisement.connect();
       this.log(`Connected to device: ${uuid}`);
 
       // Enable notifications by writing specific data if not already enabled
@@ -181,6 +185,14 @@ class LYWSD02MMC_device extends Device {
     } catch (error) {
       this.log(`Failed to enable notifications: ${error}`);
       setTimeout(() => this.setWarning(null), 95000, await this.setWarning(`${error}`));
+    } finally {
+      if (peripheral) {
+        try {
+          await peripheral.disconnect();
+        } catch (error) {
+          this.log(`Failed to disconnect after enabling notifications: ${error}`);
+        }
+      }
     }
   }
 
@@ -188,12 +200,13 @@ class LYWSD02MMC_device extends Device {
    * Enable notifications for temperature, humidity, and battery
    */
   async getfirmware() {
+    let peripheral;
     try {
       const deviceData = this.getData();
       const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
 
       const advertisement = await this.homey.ble.find(uuid);
-      const peripheral = await advertisement.connect();
+      peripheral = await advertisement.connect();
       this.log(`Connected to device: ${uuid}`);
       const deviceInformationServiceUuid = "0000180a00001000800000805f9b34fb";
       const firmwareCharacteristicUuid = "00002a2600001000800000805f9b34fb";
@@ -203,6 +216,14 @@ class LYWSD02MMC_device extends Device {
       this.log(`Firmware version: ${firmwareData.toString("utf-8")}`);
     } catch (error) {
       this.log(`Failed to get firmware version ${error}`);
+    } finally {
+      if (peripheral) {
+        try {
+          await peripheral.disconnect();
+        } catch (error) {
+          this.log(`Failed to disconnect after getting firmware: ${error}`);
+        }
+      }
     }
   }
 
@@ -210,15 +231,23 @@ class LYWSD02MMC_device extends Device {
    * Subscribe to BLE notifications and read battery level
    */
   async subscribeToBLENotifications() {
+    if (this.subscriptionInProgress) {
+      this.log("BLE subscription already in progress, skipping.");
+      return;
+    }
+    this.subscriptionInProgress = true;
     this.log("Starting BLE subscription");
     const deviceData = this.getData();
     const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
     let lastTempHumidityData = null;
     this.setWarning(null);
+    let peripheral;
 
     try {
+      await this.stopBLESubscription();
       const advertisement = await this.homey.ble.find(uuid);
-      const peripheral = await advertisement.connect();
+      peripheral = await advertisement.connect();
+      this.peripheral = peripheral;
       this.log(`Connected to device: ${uuid}`);
 
       // Logging RSSI and checking signal strength
@@ -248,6 +277,7 @@ class LYWSD02MMC_device extends Device {
 
       await tempHumCharacteristic.subscribeToNotifications((data) => {
         try {
+          this.clearNotificationTimeout();
           const dataString = data.toString("hex");
           if (lastTempHumidityData !== dataString) {
             this.log("Received new notification temp/humidity: ", data);
@@ -260,6 +290,7 @@ class LYWSD02MMC_device extends Device {
           this.log(`Error processing notification data: ${error}`);
         }
       });
+      this.setNotificationTimeout();
 
       // Updated UUIDs for Battery based on Python implementation
       const batteryServiceUuid = "ebe0ccb07a0a4b0c8a1a6ff2997da3a6"; // Services UUID
@@ -281,8 +312,6 @@ class LYWSD02MMC_device extends Device {
         this.log(`Disconnected from device: ${uuid}, will reconnect in ${this.reconnectInterval} seconds`);
       });
 
-      this.peripheral = peripheral; // Save the peripheral to unsubscribe later
-
       this.log(`Subscribed to notifications for device: ${uuid}`);
       this.setWarning(null);
     } catch (error) {
@@ -290,6 +319,30 @@ class LYWSD02MMC_device extends Device {
       await this.stopBLESubscription();
       await this.setWarning(`${error}`);
       this.homey.setTimeout(() => this.setWarning(null), 65000);
+    } finally {
+      this.subscriptionInProgress = false;
+      if (!this.peripheral && peripheral) {
+        try {
+          await peripheral.disconnect();
+        } catch (error) {
+          this.log(`Failed to disconnect after subscription failure: ${error}`);
+        }
+      }
+    }
+  }
+
+  setNotificationTimeout() {
+    this.clearNotificationTimeout();
+    this.notificationTimeout = this.homey.setTimeout(async () => {
+      this.log("No BLE notification received in time; disconnecting to recover.");
+      await this.stopBLESubscription();
+    }, this.notificationTimeoutMs);
+  }
+
+  clearNotificationTimeout() {
+    if (this.notificationTimeout) {
+      this.homey.clearTimeout(this.notificationTimeout);
+      this.notificationTimeout = null;
     }
   }
 
@@ -298,6 +351,7 @@ class LYWSD02MMC_device extends Device {
    */
   async stopBLESubscription() {
     try {
+      this.clearNotificationTimeout();
       // Clear any timeouts if you're using Homey.setTimeout
       if (this.disconnectTimeout) {
         this.homey.clearTimeout(this.disconnectTimeout);
