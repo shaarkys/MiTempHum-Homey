@@ -1,6 +1,13 @@
 "use strict";
 
 const { Device } = require("homey");
+const normalizeUuid = (uuid) => (uuid || "").toLowerCase().replace(/-/g, "");
+const UUID_181A_LONG = "0000181a00001000800000805f9b34fb";
+const UUID_181A_SHORT = "181a";
+const isUuid181a = (uuid) => {
+  const normalized = normalizeUuid(uuid);
+  return normalized === UUID_181A_SHORT || normalized === UUID_181A_LONG;
+};
 
 class MyDevice extends Device {
   /**
@@ -82,10 +89,10 @@ class MyDevice extends Device {
         if (device.address === mac["id"]) {
           this.log("Match!", mac, device.address);
           //this.log("Service Data:", device.serviceData);
-          const sdata = device.serviceData;
+          const sdata = Array.isArray(device.serviceData) ? device.serviceData : [];
           this.log("sdata:", sdata);
           sdata.forEach((uuid) => {
-            if (uuid.uuid === "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid === "181a") {
+            if (isUuid181a(uuid.uuid)) {
               const dattta = Buffer.from(uuid["data"], "hex");
               this.log(`Parsed Buffer from hex: ${dattta.toString("hex")}`);
               // incorrect for negative temps

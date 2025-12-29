@@ -2,6 +2,13 @@
 
 const { Driver } = require("homey");
 const delay = (s) => new Promise((resolve) => setTimeout(resolve, 1000 * s));
+const normalizeUuid = (uuid) => (uuid || "").toLowerCase().replace(/-/g, "");
+const UUID_181A_LONG = "0000181a00001000800000805f9b34fb";
+const UUID_181A_SHORT = "181a";
+const isUuid181a = (uuid) => {
+  const normalized = normalizeUuid(uuid);
+  return normalized === UUID_181A_SHORT || normalized === UUID_181A_LONG;
+};
 
 class MyDriver extends Driver {
   /**
@@ -51,12 +58,12 @@ class MyDriver extends Driver {
         this.log(`Found ${foundDevices.length} BLE LYWSD03MMC devices.`);
         foundDevices.forEach((device) => {
           this.log(`Discovered device: ${device.localName}, address: ${device.address}`);
-          const sdata = device.serviceData;
-          if (sdata !== null) {
+          const sdata = Array.isArray(device.serviceData) ? device.serviceData : [];
+          if (sdata.length > 0) {
             this.log(`Device ${device.localName} has service data.`);
             sdata.forEach((uuid) => {
               this.log(`Checking UUID: ${uuid.uuid} for device: ${device.localName}`);
-              if (uuid.uuid === "0000181a-0000-1000-8000-00805f9b34fb" || uuid.uuid === "181a") {
+              if (isUuid181a(uuid.uuid)) {
                 this.log(`Matching UUID found for device: ${device.localName}`);
                 let new_device = {
                   name: device.localName,
