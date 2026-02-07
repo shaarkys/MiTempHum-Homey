@@ -43,6 +43,7 @@ class LYWSD02MMC_device extends Device {
       this.notificationTimeoutMs = 10000;
       this.subscriptionInProgress = false;
       this.notificationTimeout = null;
+      this.notificationCharacteristic = null;
 
       // Enable notifications and subscribe to them
       // not working / not required ?
@@ -56,6 +57,18 @@ class LYWSD02MMC_device extends Device {
     } catch (error) {
       this.log(`Error during initialization: ${error}`);
     }
+  }
+
+  getPeripheralUuid() {
+    const store = typeof this.getStore === "function" ? this.getStore() : {};
+    const storePeripheralUuid = store && typeof store.peripheralUuid === "string" ? store.peripheralUuid : "";
+    if (storePeripheralUuid) {
+      return storePeripheralUuid.toLowerCase().replace(/:/g, "");
+    }
+
+    const data = this.getData() || {};
+    const legacyId = typeof data.id === "string" ? data.id : "";
+    return legacyId.toLowerCase().replace(/:/g, "");
   }
 
   /**
@@ -128,14 +141,16 @@ class LYWSD02MMC_device extends Device {
    */
   async enableNotifications() {
     this.log("Enabling notifications for temperature, humidity, and battery");
-    const deviceData = this.getData();
-    const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      throw new Error("Missing peripheral UUID in device store/data");
+    }
     let peripheral;
 
     try {
-      const advertisement = await this.homey.ble.find(uuid);
+      const advertisement = await this.homey.ble.find(peripheralUuid);
       peripheral = await advertisement.connect();
-      this.log(`Connected to device: ${uuid}`);
+      this.log(`Connected to device: ${peripheralUuid}`);
 
       // Enable notifications by writing specific data if not already enabled
       const serviceUuid = "ebe0ccb07a0a4b0c8a1a6ff2997da3a6"; // Services UUID
@@ -202,12 +217,14 @@ class LYWSD02MMC_device extends Device {
   async getfirmware() {
     let peripheral;
     try {
-      const deviceData = this.getData();
-      const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
+      const peripheralUuid = this.getPeripheralUuid();
+      if (!peripheralUuid) {
+        throw new Error("Missing peripheral UUID in device store/data");
+      }
 
-      const advertisement = await this.homey.ble.find(uuid);
+      const advertisement = await this.homey.ble.find(peripheralUuid);
       peripheral = await advertisement.connect();
-      this.log(`Connected to device: ${uuid}`);
+      this.log(`Connected to device: ${peripheralUuid}`);
       const deviceInformationServiceUuid = "0000180a00001000800000805f9b34fb";
       const firmwareCharacteristicUuid = "00002a2600001000800000805f9b34fb";
       const deviceInfoService = await peripheral.getService(deviceInformationServiceUuid);
@@ -237,18 +254,21 @@ class LYWSD02MMC_device extends Device {
     }
     this.subscriptionInProgress = true;
     this.log("Starting BLE subscription");
-    const deviceData = this.getData();
-    const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      this.subscriptionInProgress = false;
+      throw new Error("Missing peripheral UUID in device store/data");
+    }
     let lastTempHumidityData = null;
     this.setWarning(null);
     let peripheral;
 
     try {
       await this.stopBLESubscription();
-      const advertisement = await this.homey.ble.find(uuid);
+      const advertisement = await this.homey.ble.find(peripheralUuid);
       peripheral = await advertisement.connect();
       this.peripheral = peripheral;
-      this.log(`Connected to device: ${uuid}`);
+      this.log(`Connected to device: ${peripheralUuid}`);
 
       // Logging RSSI and checking signal strength
       const rssi = advertisement.rssi;
@@ -274,6 +294,7 @@ class LYWSD02MMC_device extends Device {
 
       const tempHumService = await peripheral.getService(temperatureHumidityServiceUuid);
       const tempHumCharacteristic = await tempHumService.getCharacteristic(temperatureHumidityCharacteristicUuid);
+      this.notificationCharacteristic = tempHumCharacteristic;
 
       await tempHumCharacteristic.subscribeToNotifications((data) => {
         try {
@@ -309,10 +330,12 @@ class LYWSD02MMC_device extends Device {
       }
 
       peripheral.once("disconnect", async () => {
-        this.log(`Disconnected from device: ${uuid}, will reconnect in ${this.reconnectInterval} seconds`);
+        this.notificationCharacteristic = null;
+        this.peripheral = null;
+        this.log(`Disconnected from device: ${peripheralUuid}, will reconnect in ${this.reconnectInterval} seconds`);
       });
 
-      this.log(`Subscribed to notifications for device: ${uuid}`);
+      this.log(`Subscribed to notifications for device: ${peripheralUuid}`);
       this.setWarning(null);
     } catch (error) {
       this.log(`Failed to subscribe to notifications: ${error}`);
@@ -358,9 +381,8 @@ class LYWSD02MMC_device extends Device {
         this.disconnectTimeout = null;
       }
 
-      if (this.peripheral) {
-        await this.unsubscribeFromBLENotifications(this.peripheral);
-        this.peripheral = null; // Clear the peripheral reference
+      if (this.notificationCharacteristic || this.peripheral) {
+        await this.unsubscribeFromBLENotifications();
       }
       this.log("Stopped BLE subscription");
     } catch (error) {
@@ -371,12 +393,28 @@ class LYWSD02MMC_device extends Device {
   /**
    * Unsubscribe from BLE notifications
    */
-  async unsubscribeFromBLENotifications(peripheral) {
+  async unsubscribeFromBLENotifications() {
     try {
-      await peripheral.disconnect();
-      this.log(`Unsubscribed from notifications and disconnected from device: ${peripheral.id}`);
+      if (this.notificationCharacteristic) {
+        await this.notificationCharacteristic.unsubscribeFromNotifications();
+        this.log("Unsubscribed from BLE notifications");
+      }
     } catch (error) {
       this.log(`Failed to unsubscribe from notifications: ${error}`);
+    } finally {
+      this.notificationCharacteristic = null;
+    }
+
+    try {
+      if (this.peripheral) {
+        const peripheralId = this.peripheral.id;
+        await this.peripheral.disconnect();
+        this.log(`Disconnected from device: ${peripheralId}`);
+      }
+    } catch (error) {
+      this.log(`Failed to disconnect from device: ${error}`);
+    } finally {
+      this.peripheral = null;
     }
   }
 

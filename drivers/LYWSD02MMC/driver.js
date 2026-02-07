@@ -3,22 +3,13 @@
 const { Driver } = require("homey");
 const normalizeUuid = (uuid) => (uuid || "").toLowerCase().replace(/-/g, "");
 const UUID_181A_LONG = "0000181a00001000800000805f9b34fb";
-const UUID_181A_SHORT = "181a";
 const UUID_FE95_LONG = "0000fe9500001000800000805f9b34fb";
-const UUID_FE95_SHORT = "fe95";
 const UUID_FEF5_LONG = "0000fef500001000800000805f9b34fb";
 const UUID_FEF5_SHORT = "fef5";
-const DISCOVERY_WAIT_MS = 9500;
+const DISCOVERY_SCAN_MS = 10000;
+const DISCOVERY_WAIT_MS = 12500;
 const DISCOVERY_CACHE_TTL_MS = 30000;
 const DISCOVERY_SERVICE_UUIDS = [UUID_181A_LONG, UUID_FEF5_LONG, UUID_FE95_LONG];
-const isUuid181a = (uuid) => {
-  const normalized = normalizeUuid(uuid);
-  return normalized === UUID_181A_SHORT || normalized === UUID_181A_LONG;
-};
-const isUuidFe95 = (uuid) => {
-  const normalized = normalizeUuid(uuid);
-  return normalized === UUID_FE95_SHORT || normalized === UUID_FE95_LONG;
-};
 const isUuidFef5 = (uuid) => {
   const normalized = normalizeUuid(uuid);
   return normalized === UUID_FEF5_SHORT || normalized === UUID_FEF5_LONG;
@@ -57,11 +48,12 @@ class LYWSD02MMC_Driver extends Driver {
    * This should return an array with the data of devices that are available for pairing.
    */
   async onPairListDevices() {
-    this.log(`onPairListDevices method called for LYWSD02MMC discovery (wait: ${DISCOVERY_WAIT_MS}ms, filter: ${DISCOVERY_SERVICE_UUIDS.join(", ")})`);
+    this.log(`onPairListDevices method called for LYWSD02MMC discovery (scan: ${DISCOVERY_SCAN_MS}ms, wait: ${DISCOVERY_WAIT_MS}ms, post-filter: ${DISCOVERY_SERVICE_UUIDS.join(", ")})`);
 
     try {
       if (!this._discoveryPromise) {
-        this._discoveryPromise = this.homey.ble.discover(DISCOVERY_SERVICE_UUIDS)
+        // Use unfiltered discover to support gateways that expose FE95 only in serviceData.
+        this._discoveryPromise = this.homey.ble.discover([], DISCOVERY_SCAN_MS)
           .then((ads) => {
             this._lastAdvertisements = Array.isArray(ads) ? ads : [];
             this._lastDiscoveryAt = Date.now();
@@ -100,43 +92,56 @@ class LYWSD02MMC_Driver extends Driver {
               .join(", ")
             : "";
           const serviceDataLabel = serviceDataUuids.length > 0 ? serviceDataUuids : "None";
-          this.log(`Scanned Device - MAC: ${ad.address}, Name: ${ad.localName || "Unknown"}, UUIDs: ${serviceUuids}, Service Data UUIDs: ${serviceDataLabel}`);
+          this.log(`Scanned Device - MAC: ${ad.address}, Name: ${ad.localName || "Unknown"}, Manufacturer: ${ad.manufacturerName || "Unknown"}, Connectable: ${ad.connectable}, UUIDs: ${serviceUuids}, Service Data UUIDs: ${serviceDataLabel}`);
         });
       }
 
-      const devices = advertisements
+      const devicesById = new Map();
+
+      advertisements
         .filter((advertisement) => {
           const serviceUuids = Array.isArray(advertisement.serviceUuids) ? advertisement.serviceUuids : [];
           const serviceData = Array.isArray(advertisement.serviceData) ? advertisement.serviceData : [];
           const name = typeof advertisement.localName === "string" ? advertisement.localName : "";
-          const isLywsd02Name = name.toLowerCase().includes("lywsd02");
-          const has181a = serviceUuids.some(isUuid181a) || serviceData.some((entry) => isUuid181a(entry.uuid));
+          const nameLower = name.toLowerCase();
+          const isLywsd02Name = nameLower.includes("lywsd02");
+          const isConnectable = advertisement.connectable !== false;
           const hasFef5 = serviceUuids.some(isUuidFef5) || serviceData.some((entry) => isUuidFef5(entry.uuid));
 
-          // Check for service UUIDs or service data, since some bridges omit advertised UUIDs
-          return (
-            has181a ||
-            hasFef5 ||
-            isLywsd02Name ||
-            (serviceUuids.some(isUuidFe95) || serviceData.some((entry) => isUuidFe95(entry.uuid))) && isLywsd02Name
-          );
+          if (!isConnectable) {
+            return false;
+          }
+
+          // Positive matching only:
+          // - FEF5 is the strongest signal for LYWSD02 in Homey Bridge advertisements.
+          // - If the name explicitly says LYWSD02, accept it as well.
+          return hasFef5 || isLywsd02Name;
         })
-        .map((advertisement) => {
+        .forEach((advertisement) => {
           // Log the devices that will be added
           const deviceId = advertisement.uuid || advertisement.address;
+          if (!deviceId) {
+            return;
+          }
+
+          if (devicesById.has(deviceId)) {
+            return;
+          }
+
           this.log(`Device added for pairing - MAC: ${advertisement.address}, Name: ${advertisement.localName || `Device ${advertisement.address}`}, UUID: ${advertisement.uuid}`);
-          return {
+          devicesById.set(deviceId, {
             name: advertisement.localName || `Device ${advertisement.address}`,
             data: {
               id: deviceId,
             },
             store: {
-              peripheralUuid: advertisement.uuid,
+              peripheralUuid: advertisement.uuid || deviceId,
               address: advertisement.address,
             },
-          };
+          });
         });
 
+      const devices = Array.from(devicesById.values());
       this.log(`Total devices added for pairing: ${devices.length}`);
       return devices;
     } catch (error) {

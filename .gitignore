@@ -27,3 +27,4 @@ env.json
 .vs/slnx.sqlite
 drivers/MJYD02YL.ZIP
 /node_modules
+AGENTS.md
