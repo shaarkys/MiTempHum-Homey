@@ -94,5 +94,8 @@
   },
   "1.2.26": {
     "en": "LYWSD02 related fixes"
+  },
+  "1.2.27": {
+    "en": "Improved LYWSD02MMC BLE pairing"
   }
 }
