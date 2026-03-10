@@ -100,5 +100,8 @@
   },
   "1.2.29": {
     "en": "Fixed LYWSD02MMC BLE reads on HSH"
+  },
+  "1.2.30": {
+    "en": "Another fixes for LYWSD02 + additional logging"
   }
 }
