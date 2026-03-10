@@ -16,6 +16,7 @@ const expandBleUuid = (uuid) => {
 const uuidsMatch = (left, right) => expandBleUuid(left) === expandBleUuid(right);
 
 const UUIDS = {
+  clientCharacteristicConfig: "2902",
   deviceInformationService: "180a",
   firmwareCharacteristic: "2a26",
   lywsd02Service: "ebe0ccb07a0a4b0c8a1a6ff2997da3a6",
@@ -92,8 +93,45 @@ class LYWSD02MMC_device extends Device {
     return legacyId.toLowerCase().replace(/:/g, "");
   }
 
+  formatUuidList(items, fallback = "none") {
+    if (!Array.isArray(items) || items.length === 0) {
+      return fallback;
+    }
+
+    return items.map((item) => {
+      if (typeof item === "string") {
+        return item;
+      }
+
+      if (item && typeof item.uuid === "string") {
+        return item.uuid;
+      }
+
+      return String(item);
+    }).join(", ");
+  }
+
+  logAdvertisementContext(advertisement) {
+    const serviceUuids = this.formatUuidList(advertisement && advertisement.serviceUuids);
+    const serviceData = Array.isArray(advertisement && advertisement.serviceData)
+      ? advertisement.serviceData.map((entry) => `${entry.uuid}:${entry.data}`).join(", ")
+      : "none";
+
+    this.log(
+      `Advertisement context - gateway: ${advertisement.gateway || "n/a"}, address: ${advertisement.address || "n/a"}, connectable: ${advertisement.connectable}, serviceUuids: ${serviceUuids}, serviceData: ${serviceData}`,
+    );
+  }
+
+  logErrorDetails(context, error) {
+    const message = error && error.message ? error.message : String(error);
+    const stack = error && error.stack ? error.stack : "no stack";
+    this.log(`${context}: ${message}`);
+    this.log(`${context} stack: ${stack}`);
+  }
+
   async getServiceByUuid(peripheral, expectedUuid) {
     const services = await peripheral.discoverServices();
+    this.log(`Discovered services: ${this.formatUuidList(services)}`);
     const service = services.find((candidate) => uuidsMatch(candidate.uuid, expectedUuid));
 
     if (!service) {
@@ -106,6 +144,7 @@ class LYWSD02MMC_device extends Device {
 
   async getCharacteristicByUuid(service, expectedUuid) {
     const characteristics = await service.discoverCharacteristics();
+    this.log(`Discovered characteristics for ${service.uuid}: ${this.formatUuidList(characteristics)}`);
     const characteristic = characteristics.find((candidate) => uuidsMatch(candidate.uuid, expectedUuid));
 
     if (!characteristic) {
@@ -114,6 +153,86 @@ class LYWSD02MMC_device extends Device {
     }
 
     return characteristic;
+  }
+
+  async getDirectService(peripheral, serviceUuid) {
+    const expandedUuid = expandBleUuid(serviceUuid);
+    this.log(`Attempting direct service lookup: ${serviceUuid} -> ${expandedUuid}`);
+    const service = await peripheral.getService(expandBleUuid(serviceUuid));
+    this.log(`Direct service lookup succeeded: ${service.uuid}`);
+    return service;
+  }
+
+  async getDirectCharacteristic(service, characteristicUuid) {
+    const expandedUuid = expandBleUuid(characteristicUuid);
+    this.log(`Attempting direct characteristic lookup on ${service.uuid}: ${characteristicUuid} -> ${expandedUuid}`);
+    const characteristic = await service.getCharacteristic(expandBleUuid(characteristicUuid));
+    this.log(`Direct characteristic lookup succeeded: ${characteristic.uuid}`);
+    return characteristic;
+  }
+
+  async getDescriptorByUuid(characteristic, expectedUuid) {
+    const descriptors = await characteristic.discoverDescriptors();
+    this.log(`Discovered descriptors for ${characteristic.uuid}: ${this.formatUuidList(descriptors)}`);
+    const descriptor = descriptors.find((candidate) => uuidsMatch(candidate.uuid, expectedUuid));
+
+    if (!descriptor) {
+      const availableDescriptors = descriptors.map((candidate) => candidate.uuid).join(", ") || "none";
+      throw new Error(`Descriptor not found: ${expectedUuid}. Available descriptors: ${availableDescriptors}`);
+    }
+
+    return descriptor;
+  }
+
+  async enableTemperatureHumidityNotifications(characteristic) {
+    this.log(`Enabling notifications for characteristic: ${characteristic.uuid}`);
+    const cccdDescriptor = await this.getDescriptorByUuid(characteristic, UUIDS.clientCharacteristicConfig);
+    await cccdDescriptor.writeValue(Buffer.from([0x01, 0x00]));
+    this.log(`Enabled notifications through CCCD descriptor: ${cccdDescriptor.uuid}`);
+  }
+
+  isInvalidUuidSubscriptionError(error) {
+    return Boolean(error && typeof error.message === "string" && error.message.includes("Invalid uuid"));
+  }
+
+  async resolveSensorCharacteristics(peripheral) {
+    try {
+      const service = await this.getDirectService(peripheral, UUIDS.lywsd02Service);
+      this.log("Sensor characteristic resolution mode: direct");
+      return {
+        mode: "direct",
+        tempHumCharacteristic: await this.getDirectCharacteristic(service, UUIDS.lywsd02DataCharacteristic),
+        batteryCharacteristic: await this.getDirectCharacteristic(service, UUIDS.lywsd02BatteryCharacteristic),
+      };
+    } catch (error) {
+      if (!this.isInvalidUuidSubscriptionError(error)) {
+        this.logErrorDetails("Direct UUID lookup failed with non-fallback error", error);
+        throw error;
+      }
+
+      this.log(`Direct UUID lookup failed, switching to discovery fallback: ${error.message}`);
+      const service = await this.getServiceByUuid(peripheral, UUIDS.lywsd02Service);
+      this.log("Sensor characteristic resolution mode: discovery fallback");
+      return {
+        mode: "fallback",
+        tempHumCharacteristic: await this.getCharacteristicByUuid(service, UUIDS.lywsd02DataCharacteristic),
+        batteryCharacteristic: await this.getCharacteristicByUuid(service, UUIDS.lywsd02BatteryCharacteristic),
+      };
+    }
+  }
+
+  async subscribeToTemperatureHumidity(characteristic, onData) {
+    this.notificationCharacteristic = characteristic;
+    this.log(`Calling subscribeToNotifications on characteristic: ${characteristic.uuid}`);
+    await characteristic.subscribeToNotifications((data) => {
+      try {
+        this.clearNotificationTimeout();
+        onData(data);
+      } catch (error) {
+        this.log(`Error processing notification data: ${error}`);
+      }
+    });
+    this.setNotificationTimeout();
   }
 
   /**
@@ -197,27 +316,14 @@ class LYWSD02MMC_device extends Device {
       peripheral = await advertisement.connect();
       this.log(`Connected to device: ${peripheralUuid}`);
 
-      // Enable notifications by writing specific data if not already enabled
       const serviceUuid = UUIDS.lywsd02Service;
       const characteristicUuid = UUIDS.lywsd02DataCharacteristic;
-      const enableNotificationsData = Buffer.from([0x01, 0x00]);
 
       const service = await this.getServiceByUuid(peripheral, serviceUuid);
       this.log(`Obtained service: ${serviceUuid}`);
       const characteristic = await this.getCharacteristicByUuid(service, characteristicUuid);
       this.log(`Obtained characteristic: ${characteristicUuid}`);
-
-      // Check if notifications are already enabled
-      const currentValue = await characteristic.read();
-      this.log(`Current value of characteristic: ${currentValue.toString("hex")}`);
-
-      if (!currentValue.slice(0, enableNotificationsData.length).equals(enableNotificationsData)) {
-        this.log("Notifications not enabled, writing enableNotificationsData...");
-        await characteristic.write(enableNotificationsData);
-        this.log("Enabled notifications for temperature and humidity");
-      } else {
-        this.log("Notifications for temperature and humidity are already enabled");
-      }
+      await this.enableTemperatureHumidityNotifications(characteristic);
 
       // Logging RSSI and checking signal strength
       const rssi = advertisement.rssi;
@@ -310,6 +416,7 @@ class LYWSD02MMC_device extends Device {
       peripheral = await advertisement.connect();
       this.peripheral = peripheral;
       this.log(`Connected to device: ${peripheralUuid}`);
+      this.logAdvertisementContext(advertisement);
 
       // Logging RSSI and checking signal strength
       const rssi = advertisement.rssi;
@@ -329,35 +436,8 @@ class LYWSD02MMC_device extends Device {
         this.homey.setTimeout(() => this.setWarning(null), 15000);
       }
 
-      const temperatureHumidityServiceUuid = UUIDS.lywsd02Service;
-      const temperatureHumidityCharacteristicUuid = UUIDS.lywsd02DataCharacteristic;
-
-      const tempHumService = await this.getServiceByUuid(peripheral, temperatureHumidityServiceUuid);
-      const tempHumCharacteristic = await this.getCharacteristicByUuid(tempHumService, temperatureHumidityCharacteristicUuid);
-      this.notificationCharacteristic = tempHumCharacteristic;
-
-      await tempHumCharacteristic.subscribeToNotifications((data) => {
-        try {
-          this.clearNotificationTimeout();
-          const dataString = data.toString("hex");
-          if (lastTempHumidityData !== dataString) {
-            this.log("Received new notification temp/humidity: ", data);
-            this.updateTag(data);
-            lastTempHumidityData = dataString;
-          } else {
-            //  this.log("Duplicate notification received, ignoring.");
-          }
-        } catch (error) {
-          this.log(`Error processing notification data: ${error}`);
-        }
-      });
-      this.setNotificationTimeout();
-
-      const batteryServiceUuid = UUIDS.lywsd02Service;
-      const batteryCharacteristicUuid = UUIDS.lywsd02BatteryCharacteristic;
-
-      const batteryService = await this.getServiceByUuid(peripheral, batteryServiceUuid);
-      const batteryCharacteristic = await this.getCharacteristicByUuid(batteryService, batteryCharacteristicUuid);
+      const { mode, tempHumCharacteristic, batteryCharacteristic } = await this.resolveSensorCharacteristics(peripheral);
+      this.log(`Resolved sensor characteristics using mode: ${mode}`);
       const batteryData = await batteryCharacteristic.read();
 
       this.log(`Battery data buffer: ${batteryData.toString("hex")}`);
@@ -374,10 +454,45 @@ class LYWSD02MMC_device extends Device {
         this.log(`Disconnected from device: ${peripheralUuid}, will reconnect in ${this.reconnectInterval} seconds`);
       });
 
+      if (mode === "fallback") {
+        await this.enableTemperatureHumidityNotifications(tempHumCharacteristic);
+      }
+
+      try {
+        await this.subscribeToTemperatureHumidity(tempHumCharacteristic, (data) => {
+          const dataString = data.toString("hex");
+          if (lastTempHumidityData !== dataString) {
+            this.log("Received new notification temp/humidity: ", data);
+            this.updateTag(data);
+            lastTempHumidityData = dataString;
+          }
+        });
+      } catch (error) {
+        this.notificationCharacteristic = null;
+        this.logErrorDetails(`subscribeToNotifications failed in mode ${mode}`, error);
+        if (mode !== "fallback" || !this.isInvalidUuidSubscriptionError(error)) {
+          throw error;
+        }
+
+        this.log(`Falling back to direct read after notification subscribe failure in discovery mode: ${error.message}`);
+        const tempHumData = await tempHumCharacteristic.read();
+        this.log(`Temperature/humidity data buffer: ${tempHumData.toString("hex")}`);
+
+        if (tempHumData.length >= 3) {
+          await this.updateTag(tempHumData, { disconnectAfter: false });
+          await this.stopBLESubscription();
+          this.setWarning(null);
+          return;
+        }
+
+        throw error;
+      }
+
       this.log(`Subscribed to notifications for device: ${peripheralUuid}`);
       this.setWarning(null);
     } catch (error) {
       this.log(`Failed to subscribe to notifications: ${error}`);
+      this.logErrorDetails("Final subscribeToBLENotifications error", error);
       await this.stopBLESubscription();
       await this.setWarning(`${error}`);
       this.homey.setTimeout(() => this.setWarning(null), 65000);
@@ -460,7 +575,7 @@ class LYWSD02MMC_device extends Device {
   /**
    * Update tag with received data from BLE notifications
    */
-  async updateTag(data) {
+  async updateTag(data, { disconnectAfter = true } = {}) {
     this.log(`Updating measurements for ${this.getName()}`);
 
     // Parse binary data: int16 for temperature, uint8 for humidity
@@ -502,7 +617,9 @@ class LYWSD02MMC_device extends Device {
       setTimeout(() => this.setWarning(null), 55000, await this.setWarning(`Error parsing data`));
     }
     // **Disconnect from the peripheral after processing the data**
-    await this.stopBLESubscription();
+    if (disconnectAfter) {
+      await this.stopBLESubscription();
+    }
   }
 
   /**
