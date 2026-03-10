@@ -103,5 +103,8 @@
   },
   "1.2.30": {
     "en": "Another fixes for LYWSD02 + additional logging"
+  },
+  "1.2.31": {
+    "en": "Another fixes for LYWSD02 for HSH"
   }
 }
