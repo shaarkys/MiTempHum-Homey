@@ -14,6 +14,19 @@ const expandBleUuid = (uuid) => {
   return normalized;
 };
 const uuidsMatch = (left, right) => expandBleUuid(left) === expandBleUuid(right);
+const toHomeyLookupUuid = (uuid) => {
+  const normalized = normalizeUuid(uuid);
+  if (normalized.length === 4 || normalized.length === 8) {
+    return normalized;
+  }
+  if (normalized.length === 32 && normalized.endsWith(BLE_BASE_UUID_SUFFIX) && normalized.startsWith("0000")) {
+    return normalized.slice(4, 8);
+  }
+  if (normalized.length === 32) {
+    return normalized.slice(0, 8);
+  }
+  return normalized;
+};
 
 const UUIDS = {
   clientCharacteristicConfig: "2902",
@@ -71,6 +84,7 @@ class LYWSD02MMC_device extends Device {
       // not working / not required ?
       // await this.enableNotifications();
       await this.getfirmware();
+      await this.delay(1);
       await this.subscribeToBLENotifications();
 
       // Set up polling
@@ -156,17 +170,17 @@ class LYWSD02MMC_device extends Device {
   }
 
   async getDirectService(peripheral, serviceUuid) {
-    const expandedUuid = expandBleUuid(serviceUuid);
-    this.log(`Attempting direct service lookup: ${serviceUuid} -> ${expandedUuid}`);
-    const service = await peripheral.getService(expandBleUuid(serviceUuid));
+    const lookupUuid = toHomeyLookupUuid(serviceUuid);
+    this.log(`Attempting direct service lookup: ${serviceUuid} -> ${lookupUuid}`);
+    const service = await peripheral.getService(lookupUuid);
     this.log(`Direct service lookup succeeded: ${service.uuid}`);
     return service;
   }
 
   async getDirectCharacteristic(service, characteristicUuid) {
-    const expandedUuid = expandBleUuid(characteristicUuid);
-    this.log(`Attempting direct characteristic lookup on ${service.uuid}: ${characteristicUuid} -> ${expandedUuid}`);
-    const characteristic = await service.getCharacteristic(expandBleUuid(characteristicUuid));
+    const lookupUuid = toHomeyLookupUuid(characteristicUuid);
+    this.log(`Attempting direct characteristic lookup on ${service.uuid}: ${characteristicUuid} -> ${lookupUuid}`);
+    const characteristic = await service.getCharacteristic(lookupUuid);
     this.log(`Direct characteristic lookup succeeded: ${characteristic.uuid}`);
     return characteristic;
   }
