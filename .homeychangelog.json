@@ -97,5 +97,8 @@
   },
   "1.2.27": {
     "en": "Improved LYWSD02MMC BLE pairing"
+  },
+  "1.2.29": {
+    "en": "Fixed LYWSD02MMC BLE reads on HSH"
   }
 }
