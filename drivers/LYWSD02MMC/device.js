@@ -1,6 +1,27 @@
 "use strict";
 
 const { Device } = require("homey");
+const BLE_BASE_UUID_SUFFIX = "00001000800000805f9b34fb";
+const normalizeUuid = (uuid) => (uuid || "").toLowerCase().replace(/-/g, "");
+const expandBleUuid = (uuid) => {
+  const normalized = normalizeUuid(uuid);
+  if (normalized.length === 4) {
+    return `0000${normalized}${BLE_BASE_UUID_SUFFIX}`;
+  }
+  if (normalized.length === 8) {
+    return `${normalized}${BLE_BASE_UUID_SUFFIX}`;
+  }
+  return normalized;
+};
+const uuidsMatch = (left, right) => expandBleUuid(left) === expandBleUuid(right);
+
+const UUIDS = {
+  deviceInformationService: "180a",
+  firmwareCharacteristic: "2a26",
+  lywsd02Service: "ebe0ccb07a0a4b0c8a1a6ff2997da3a6",
+  lywsd02DataCharacteristic: "ebe0ccc17a0a4b0c8a1a6ff2997da3a6",
+  lywsd02BatteryCharacteristic: "ebe0ccc47a0a4b0c8a1a6ff2997da3a6",
+};
 
 class LYWSD02MMC_device extends Device {
   /**
@@ -69,6 +90,30 @@ class LYWSD02MMC_device extends Device {
     const data = this.getData() || {};
     const legacyId = typeof data.id === "string" ? data.id : "";
     return legacyId.toLowerCase().replace(/:/g, "");
+  }
+
+  async getServiceByUuid(peripheral, expectedUuid) {
+    const services = await peripheral.discoverServices();
+    const service = services.find((candidate) => uuidsMatch(candidate.uuid, expectedUuid));
+
+    if (!service) {
+      const availableServices = services.map((candidate) => candidate.uuid).join(", ") || "none";
+      throw new Error(`Service not found: ${expectedUuid}. Available services: ${availableServices}`);
+    }
+
+    return service;
+  }
+
+  async getCharacteristicByUuid(service, expectedUuid) {
+    const characteristics = await service.discoverCharacteristics();
+    const characteristic = characteristics.find((candidate) => uuidsMatch(candidate.uuid, expectedUuid));
+
+    if (!characteristic) {
+      const availableCharacteristics = characteristics.map((candidate) => candidate.uuid).join(", ") || "none";
+      throw new Error(`Characteristic not found: ${expectedUuid}. Available characteristics: ${availableCharacteristics}`);
+    }
+
+    return characteristic;
   }
 
   /**
@@ -153,13 +198,13 @@ class LYWSD02MMC_device extends Device {
       this.log(`Connected to device: ${peripheralUuid}`);
 
       // Enable notifications by writing specific data if not already enabled
-      const serviceUuid = "ebe0ccb07a0a4b0c8a1a6ff2997da3a6"; // Services UUID
-      const characteristicUuid = "ebe0ccc17a0a4b0c8a1a6ff2997da3a6"; // Updated UUID from Python implementation
+      const serviceUuid = UUIDS.lywsd02Service;
+      const characteristicUuid = UUIDS.lywsd02DataCharacteristic;
       const enableNotificationsData = Buffer.from([0x01, 0x00]);
 
-      const service = await peripheral.getService(serviceUuid);
+      const service = await this.getServiceByUuid(peripheral, serviceUuid);
       this.log(`Obtained service: ${serviceUuid}`);
-      const characteristic = await service.getCharacteristic(characteristicUuid);
+      const characteristic = await this.getCharacteristicByUuid(service, characteristicUuid);
       this.log(`Obtained characteristic: ${characteristicUuid}`);
 
       // Check if notifications are already enabled
@@ -191,10 +236,8 @@ class LYWSD02MMC_device extends Device {
         this.homey.setTimeout(() => this.setWarning(null), 15000);
       }
 
-      const deviceInformationServiceUuid = "0000180a00001000800000805f9b34fb";
-      const firmwareCharacteristicUuid = "00002a2600001000800000805f9b34fb";
-      const deviceInfoService = await peripheral.getService(deviceInformationServiceUuid);
-      const firmwareCharacteristic = await deviceInfoService.getCharacteristic(firmwareCharacteristicUuid);
+      const deviceInfoService = await this.getServiceByUuid(peripheral, UUIDS.deviceInformationService);
+      const firmwareCharacteristic = await this.getCharacteristicByUuid(deviceInfoService, UUIDS.firmwareCharacteristic);
       const firmwareData = await firmwareCharacteristic.read();
       this.log(`Firmware version: ${firmwareData.toString("utf-8")}`);
     } catch (error) {
@@ -225,10 +268,8 @@ class LYWSD02MMC_device extends Device {
       const advertisement = await this.homey.ble.find(peripheralUuid);
       peripheral = await advertisement.connect();
       this.log(`Connected to device: ${peripheralUuid}`);
-      const deviceInformationServiceUuid = "0000180a00001000800000805f9b34fb";
-      const firmwareCharacteristicUuid = "00002a2600001000800000805f9b34fb";
-      const deviceInfoService = await peripheral.getService(deviceInformationServiceUuid);
-      const firmwareCharacteristic = await deviceInfoService.getCharacteristic(firmwareCharacteristicUuid);
+      const deviceInfoService = await this.getServiceByUuid(peripheral, UUIDS.deviceInformationService);
+      const firmwareCharacteristic = await this.getCharacteristicByUuid(deviceInfoService, UUIDS.firmwareCharacteristic);
       const firmwareData = await firmwareCharacteristic.read();
       this.log(`Firmware version: ${firmwareData.toString("utf-8")}`);
     } catch (error) {
@@ -288,12 +329,11 @@ class LYWSD02MMC_device extends Device {
         this.homey.setTimeout(() => this.setWarning(null), 15000);
       }
 
-      // Updated UUIDs based on Python implementation
-      const temperatureHumidityServiceUuid = "ebe0ccb07a0a4b0c8a1a6ff2997da3a6"; // Services UUID
-      const temperatureHumidityCharacteristicUuid = "ebe0ccc17a0a4b0c8a1a6ff2997da3a6"; // UUID_DATA
+      const temperatureHumidityServiceUuid = UUIDS.lywsd02Service;
+      const temperatureHumidityCharacteristicUuid = UUIDS.lywsd02DataCharacteristic;
 
-      const tempHumService = await peripheral.getService(temperatureHumidityServiceUuid);
-      const tempHumCharacteristic = await tempHumService.getCharacteristic(temperatureHumidityCharacteristicUuid);
+      const tempHumService = await this.getServiceByUuid(peripheral, temperatureHumidityServiceUuid);
+      const tempHumCharacteristic = await this.getCharacteristicByUuid(tempHumService, temperatureHumidityCharacteristicUuid);
       this.notificationCharacteristic = tempHumCharacteristic;
 
       await tempHumCharacteristic.subscribeToNotifications((data) => {
@@ -313,12 +353,11 @@ class LYWSD02MMC_device extends Device {
       });
       this.setNotificationTimeout();
 
-      // Updated UUIDs for Battery based on Python implementation
-      const batteryServiceUuid = "ebe0ccb07a0a4b0c8a1a6ff2997da3a6"; // Services UUID
-      const batteryCharacteristicUuid = "ebe0ccc47a0a4b0c8a1a6ff2997da3a6"; // UUID_BATTERY
+      const batteryServiceUuid = UUIDS.lywsd02Service;
+      const batteryCharacteristicUuid = UUIDS.lywsd02BatteryCharacteristic;
 
-      const batteryService = await peripheral.getService(batteryServiceUuid);
-      const batteryCharacteristic = await batteryService.getCharacteristic(batteryCharacteristicUuid);
+      const batteryService = await this.getServiceByUuid(peripheral, batteryServiceUuid);
+      const batteryCharacteristic = await this.getCharacteristicByUuid(batteryService, batteryCharacteristicUuid);
       const batteryData = await batteryCharacteristic.read();
 
       this.log(`Battery data buffer: ${batteryData.toString("hex")}`);
@@ -344,7 +383,7 @@ class LYWSD02MMC_device extends Device {
       this.homey.setTimeout(() => this.setWarning(null), 65000);
     } finally {
       this.subscriptionInProgress = false;
-      if (!this.peripheral && peripheral) {
+      if (peripheral && peripheral.state === "connected" && !this.peripheral) {
         try {
           await peripheral.disconnect();
         } catch (error) {
