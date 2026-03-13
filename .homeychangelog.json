@@ -109,5 +109,8 @@
   },
   "1.2.32": {
     "en": "Another fixes for LYWSD02 for HSH"
+  },
+  "1.2.33": {
+    "en": "Experimental support for LYWSD02MMC with support of Optional 32-character Xiaomi bindkey"
   }
 }
