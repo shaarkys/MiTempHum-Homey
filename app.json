@@ -342,6 +342,39 @@
             "ru": "секунды",
             "ko": "초"
           }
+        },
+        {
+          "id": "bindkey",
+          "type": "text",
+          "label": {
+            "en": "Bindkey",
+            "nl": "Bindkey",
+            "da": "Bindkey",
+            "de": "Bindkey",
+            "es": "Bindkey",
+            "fr": "Bindkey",
+            "it": "Bindkey",
+            "no": "Bindkey",
+            "sv": "Bindkey",
+            "pl": "Bindkey",
+            "ru": "Bindkey",
+            "ko": "Bindkey"
+          },
+          "value": "",
+          "hint": {
+            "en": "Optional 32-character Xiaomi bindkey used to decrypt encrypted FE95 advertisements from LYWSD02MMC sensors.",
+            "nl": "Optionele Xiaomi bindkey van 32 tekens om versleutelde FE95-advertenties van LYWSD02MMC-sensoren te ontsleutelen.",
+            "da": "Valgfri Xiaomi-bindkey på 32 tegn til at dekryptere krypterede FE95-annoncer fra LYWSD02MMC-sensorer.",
+            "de": "Optionale Xiaomi-Bindkey mit 32 Zeichen zum Entschlüsseln verschlüsselter FE95-Werbedaten von LYWSD02MMC-Sensoren.",
+            "es": "Bindkey opcional de Xiaomi de 32 caracteres para descifrar anuncios FE95 cifrados de sensores LYWSD02MMC.",
+            "fr": "Bindkey Xiaomi optionnelle de 32 caractères pour déchiffrer les publicités FE95 chiffrées des capteurs LYWSD02MMC.",
+            "it": "Bindkey Xiaomi opzionale di 32 caratteri per decifrare gli annunci FE95 crittografati dei sensori LYWSD02MMC.",
+            "no": "Valgfri Xiaomi-bindkey på 32 tegn for å dekryptere krypterte FE95-annonser fra LYWSD02MMC-sensorer.",
+            "sv": "Valfri Xiaomi-bindkey med 32 tecken för att dekryptera krypterade FE95-annonser från LYWSD02MMC-sensorer.",
+            "pl": "Opcjonalny 32-znakowy bindkey Xiaomi do odszyfrowania zaszyfrowanych reklam FE95 z czujników LYWSD02MMC.",
+            "ru": "Необязательный 32-символьный bindkey Xiaomi для расшифровки зашифрованных FE95-объявлений датчиков LYWSD02MMC.",
+            "ko": "LYWSD02MMC 센서의 암호화된 FE95 광고를 복호화하기 위한 선택적 32자 Xiaomi bindkey입니다."
+          }
         }
       ]
     },

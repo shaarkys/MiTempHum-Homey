@@ -1,8 +1,10 @@
 "use strict";
 
+const crypto = require("crypto");
 const { Device } = require("homey");
 const BLE_BASE_UUID_SUFFIX = "00001000800000805f9b34fb";
 const normalizeUuid = (uuid) => (uuid || "").toLowerCase().replace(/-/g, "");
+const normalizeMac = (address) => (address || "").toLowerCase().replace(/:/g, "");
 const expandBleUuid = (uuid) => {
   const normalized = normalizeUuid(uuid);
   if (normalized.length === 4) {
@@ -31,10 +33,22 @@ const toHomeyLookupUuid = (uuid) => {
 const UUIDS = {
   clientCharacteristicConfig: "2902",
   deviceInformationService: "180a",
+  miBeaconService: "fe95",
   firmwareCharacteristic: "2a26",
   lywsd02Service: "ebe0ccb07a0a4b0c8a1a6ff2997da3a6",
   lywsd02DataCharacteristic: "ebe0ccc17a0a4b0c8a1a6ff2997da3a6",
   lywsd02BatteryCharacteristic: "ebe0ccc47a0a4b0c8a1a6ff2997da3a6",
+};
+const FE95_SUPPORTED_DEVICE_TYPES = {
+  0x045b: "LYWSD02",
+  0x16e4: "LYWSD02MMC",
+  0x2542: "LYWSD02MMC",
+};
+const FE95_OBJECTS = {
+  temperature: 0x1004,
+  humidity: 0x1006,
+  battery: 0x100a,
+  temperatureHumidity: 0x100d,
 };
 
 class LYWSD02MMC_device extends Device {
@@ -55,6 +69,14 @@ class LYWSD02MMC_device extends Device {
     return new Promise((resolve) => this.homey.setTimeout(resolve, 1000 * s));
   }
 
+  async safeSetCapabilityValue(capabilityId, value) {
+    try {
+      await this.setCapabilityValue(capabilityId, value);
+    } catch (error) {
+      this.log(`Failed to set capability ${capabilityId}: ${error}`);
+    }
+  }
+
   /**
    * onInit is called when the device is initialized.
    */
@@ -62,19 +84,20 @@ class LYWSD02MMC_device extends Device {
     try {
       this.log("LYWSD02MMC BLE device has been initialized - ", this.getData());
       // Reset all values
-      this.setCapabilityValue("measure_temperature", null);
-      this.setCapabilityValue("measure_humidity", null);
-      this.setCapabilityValue("measure_battery", null);
+      await this.safeSetCapabilityValue("measure_temperature", null);
+      await this.safeSetCapabilityValue("measure_humidity", null);
+      await this.safeSetCapabilityValue("measure_battery", null);
 
       if (!this.hasCapability("measure_rssi")) await this.addCapability("measure_rssi");
 
-      this.setCapabilityValue("measure_rssi", null);
+      await this.safeSetCapabilityValue("measure_rssi", null);
 
       // Get the initial temperature offset setting
       this.temperatureOffset = this.getSetting("temperature_offset") || 0;
 
       // Get the reconnect interval setting, default to 5 minutes
       this.reconnectInterval = this.getSetting("reconnect_interval") || 5 * 60;
+      this.bindkey = this.getBindkeyBuffer();
       this.notificationTimeoutMs = 10000;
       this.subscriptionInProgress = false;
       this.notificationTimeout = null;
@@ -125,10 +148,36 @@ class LYWSD02MMC_device extends Device {
     }).join(", ");
   }
 
+  formatBufferHex(value) {
+    if (Buffer.isBuffer(value)) {
+      return value.toString("hex");
+    }
+
+    if (value && Buffer.isBuffer(value.data)) {
+      return value.data.toString("hex");
+    }
+
+    return String(value);
+  }
+
+  getBindkeyBuffer(rawValue = this.getSetting("bindkey")) {
+    const normalized = typeof rawValue === "string" ? rawValue.trim().toLowerCase() : "";
+    if (!normalized) {
+      return null;
+    }
+
+    if (!/^[0-9a-f]{32}$/.test(normalized)) {
+      this.log(`Ignoring invalid bindkey format: expected 32 hex characters, got "${rawValue}"`);
+      return null;
+    }
+
+    return Buffer.from(normalized, "hex");
+  }
+
   logAdvertisementContext(advertisement) {
     const serviceUuids = this.formatUuidList(advertisement && advertisement.serviceUuids);
     const serviceData = Array.isArray(advertisement && advertisement.serviceData)
-      ? advertisement.serviceData.map((entry) => `${entry.uuid}:${entry.data}`).join(", ")
+      ? advertisement.serviceData.map((entry) => `${entry.uuid}:${this.formatBufferHex(entry && entry.data)}`).join(", ")
       : "none";
 
     this.log(
@@ -223,6 +272,241 @@ class LYWSD02MMC_device extends Device {
     return Boolean(error && typeof error.message === "string" && error.message.includes("Invalid uuid"));
   }
 
+  getFe95ServiceData(advertisement) {
+    const serviceData = Array.isArray(advertisement && advertisement.serviceData) ? advertisement.serviceData : [];
+    return serviceData.find((entry) => uuidsMatch(entry && entry.uuid, UUIDS.miBeaconService)) || null;
+  }
+
+  parseMiBeaconPayload(payload) {
+    const parsed = {};
+    let offset = 0;
+
+    while (payload.length >= offset + 3) {
+      const objectType = payload.readUInt16LE(offset);
+      const objectLength = payload.readUInt8(offset + 2);
+      const nextOffset = offset + 3 + objectLength;
+
+      if (payload.length < nextOffset) {
+        this.log(`Incomplete MiBeacon object 0x${objectType.toString(16)} in payload: ${payload.toString("hex")}`);
+        break;
+      }
+
+      const objectData = payload.slice(offset + 3, nextOffset);
+      switch (objectType) {
+        case FE95_OBJECTS.temperature:
+          if (objectData.length === 2) {
+            parsed.temperature = objectData.readInt16LE(0) / 10;
+          }
+          break;
+        case FE95_OBJECTS.humidity:
+          if (objectData.length === 2) {
+            parsed.humidity = objectData.readUInt16LE(0) / 10;
+          }
+          break;
+        case FE95_OBJECTS.battery:
+          if (objectData.length >= 1) {
+            parsed.battery = objectData.readUInt8(0);
+          }
+          break;
+        case FE95_OBJECTS.temperatureHumidity:
+          if (objectData.length === 4) {
+            parsed.temperature = objectData.readInt16LE(0) / 10;
+            parsed.humidity = objectData.readUInt16LE(2) / 10;
+          }
+          break;
+        default:
+          break;
+      }
+
+      offset = nextOffset;
+    }
+
+    return parsed;
+  }
+
+  decryptMiBeaconV4V5(bindkey, data, payloadOffset, sourceMac) {
+    if (!bindkey || bindkey.length !== 16) {
+      throw new Error("Missing 16-byte bindkey for encrypted FE95 payload");
+    }
+
+    if (data.length < payloadOffset + 9) {
+      throw new Error(`Encrypted FE95 payload too short: ${data.length} bytes`);
+    }
+
+    const nonce = Buffer.concat([
+      Buffer.from(sourceMac).reverse(),
+      data.slice(2, 5),
+      data.slice(-7, -4),
+    ]);
+    const encryptedPayload = data.slice(payloadOffset, -7);
+    const mic = data.slice(-4);
+    const decipher = crypto.createDecipheriv("aes-128-ccm", bindkey, nonce, { authTagLength: 4 });
+
+    decipher.setAuthTag(mic);
+    decipher.setAAD(Buffer.from([0x11]), { plaintextLength: encryptedPayload.length });
+
+    return Buffer.concat([decipher.update(encryptedPayload), decipher.final()]);
+  }
+
+  parseFe95Advertisement(advertisement) {
+    const serviceDataEntry = this.getFe95ServiceData(advertisement);
+    if (!serviceDataEntry || !Buffer.isBuffer(serviceDataEntry.data)) {
+      return null;
+    }
+
+    const data = serviceDataEntry.data;
+    if (data.length < 5) {
+      this.log(`Skipping FE95 payload with invalid length: ${data.toString("hex")}`);
+      return null;
+    }
+
+    const frameControl = data.readUInt16LE(0);
+    const version = frameControl >> 12;
+    const objectIncluded = ((frameControl >> 6) & 1) === 1;
+    const capabilityIncluded = ((frameControl >> 5) & 1) === 1;
+    const macIncluded = ((frameControl >> 4) & 1) === 1;
+    const encrypted = ((frameControl >> 3) & 1) === 1;
+    const deviceId = data.readUInt16LE(2);
+    const deviceType = FE95_SUPPORTED_DEVICE_TYPES[deviceId];
+
+    if (!deviceType) {
+      this.log(`Ignoring unsupported FE95 device id 0x${deviceId.toString(16)} payload: ${data.toString("hex")}`);
+      return null;
+    }
+
+    let offset = 5;
+    let sourceMac = Buffer.from(normalizeMac(advertisement.address), "hex");
+
+    if (macIncluded) {
+      if (data.length < offset + 6) {
+        this.log(`Invalid FE95 payload, missing MAC bytes: ${data.toString("hex")}`);
+        return null;
+      }
+      sourceMac = Buffer.from(data.slice(offset, offset + 6)).reverse();
+      offset += 6;
+    }
+
+    if (capabilityIncluded) {
+      if (data.length < offset + 1) {
+        this.log(`Invalid FE95 payload, missing capability byte: ${data.toString("hex")}`);
+        return null;
+      }
+      const capability = data.readUInt8(offset);
+      offset += 1;
+      if ((capability & 0x20) !== 0) {
+        if (data.length < offset + 1) {
+          this.log(`Invalid FE95 payload, missing capability IO byte: ${data.toString("hex")}`);
+          return null;
+        }
+        offset += 1;
+      }
+    }
+
+    if (!objectIncluded) {
+      this.log(`FE95 payload for ${deviceType} has no object data: ${data.toString("hex")}`);
+      return {
+        encrypted,
+        deviceId,
+        deviceType,
+        version,
+        values: {},
+      };
+    }
+
+    let payload;
+    if (encrypted) {
+      if (version <= 3) {
+        this.log(`Encrypted FE95 payload uses unsupported legacy MiBeacon v${version}: ${data.toString("hex")}`);
+        return {
+          encrypted,
+          deviceId,
+          deviceType,
+          version,
+          values: {},
+          bindkeyRequired: true,
+        };
+      }
+
+      if (!this.bindkey) {
+        this.log(`Encrypted FE95 payload for ${deviceType} detected but bindkey is not configured: ${data.toString("hex")}`);
+        return {
+          encrypted,
+          deviceId,
+          deviceType,
+          version,
+          values: {},
+          bindkeyRequired: true,
+        };
+      }
+
+      try {
+        payload = this.decryptMiBeaconV4V5(this.bindkey, data, offset, sourceMac);
+      } catch (error) {
+        this.logErrorDetails("Failed to decrypt FE95 payload", error);
+        return {
+          encrypted,
+          deviceId,
+          deviceType,
+          version,
+          values: {},
+          bindkeyRequired: true,
+          decryptionFailed: true,
+        };
+      }
+    } else {
+      payload = data.slice(offset);
+    }
+
+    return {
+      encrypted,
+      deviceId,
+      deviceType,
+      version,
+      payloadHex: payload.toString("hex"),
+      rawHex: data.toString("hex"),
+      values: this.parseMiBeaconPayload(payload),
+    };
+  }
+
+  async applyParsedAdvertisementValues(parsed) {
+    if (!parsed || !parsed.values) {
+      return false;
+    }
+
+    const { temperature, humidity, battery } = parsed.values;
+    const hasTempOrHumidity = temperature !== undefined || humidity !== undefined;
+
+    this.log(
+      `Parsed FE95 advertisement - model: ${parsed.deviceType}, version: ${parsed.version}, encrypted: ${parsed.encrypted}, payload: ${parsed.payloadHex || "n/a"}, values: ${JSON.stringify(parsed.values)}`,
+    );
+
+    if (battery !== undefined && battery >= 0 && battery <= 100) {
+      await this.safeSetCapabilityValue("measure_battery", battery);
+      this.log(`Battery level from FE95 advertisement: ${battery}%`);
+    }
+
+    if (temperature !== undefined) {
+      const adjustedTemperature = temperature + this.temperatureOffset;
+      if (adjustedTemperature < -20 || adjustedTemperature > 50) {
+        this.log(`Ignoring FE95 temperature reading: ${adjustedTemperature}°C`);
+      } else {
+        await this.safeSetCapabilityValue("measure_temperature", adjustedTemperature);
+        this.log(`Passive temperature from FE95: ${adjustedTemperature}°C`);
+      }
+    }
+
+    if (humidity !== undefined) {
+      if (humidity < 0 || humidity > 100) {
+        this.log(`Ignoring FE95 humidity reading: ${humidity}%`);
+      } else {
+        await this.safeSetCapabilityValue("measure_humidity", humidity);
+        this.log(`Passive humidity from FE95: ${humidity}%`);
+      }
+    }
+
+    return hasTempOrHumidity;
+  }
+
   async resolveSensorCharacteristics(peripheral) {
     try {
       const service = await this.getDirectService(peripheral, UUIDS.lywsd02Service);
@@ -296,6 +580,11 @@ class LYWSD02MMC_device extends Device {
         this.log(`Device ${this.getName()} reconnect interval: ${this.reconnectInterval} seconds`);
         this.pollDevice();
       }
+
+      if (changedKeys.includes("bindkey")) {
+        this.bindkey = this.getBindkeyBuffer(newSettings.bindkey);
+        this.log(`Device ${this.getName()} bindkey was ${this.bindkey ? "updated" : "cleared or invalid"}`);
+      }
     } catch (error) {
       this.log(`Error during settings update: ${error}`);
     }
@@ -363,7 +652,7 @@ class LYWSD02MMC_device extends Device {
       this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
 
       // Set the RSSI capability value
-      this.setCapabilityValue("measure_rssi", rssi);
+      await this.safeSetCapabilityValue("measure_rssi", rssi);
 
       if (rssi < -80) {
         this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
@@ -441,9 +730,6 @@ class LYWSD02MMC_device extends Device {
     try {
       await this.stopBLESubscription();
       const advertisement = await this.homey.ble.find(peripheralUuid);
-      peripheral = await advertisement.connect();
-      this.peripheral = peripheral;
-      this.log(`Connected to device: ${peripheralUuid}`);
       this.logAdvertisementContext(advertisement);
 
       // Logging RSSI and checking signal strength
@@ -454,7 +740,7 @@ class LYWSD02MMC_device extends Device {
       if (!this.hasCapability("measure_rssi")) await this.addCapability("measure_rssi");
 
       // Set the RSSI capability value
-      this.setCapabilityValue("measure_rssi", rssi);
+      await this.safeSetCapabilityValue("measure_rssi", rssi);
 
       const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
       this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
@@ -463,6 +749,20 @@ class LYWSD02MMC_device extends Device {
         this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
         this.homey.setTimeout(() => this.setWarning(null), 15000);
       }
+
+      const parsedAdvertisement = this.parseFe95Advertisement(advertisement);
+      if (parsedAdvertisement) {
+        const handledPassively = await this.applyParsedAdvertisementValues(parsedAdvertisement);
+        if (handledPassively) {
+          this.log("Using passive FE95 advertisement data, skipping GATT subscription.");
+          this.setWarning(null);
+          return;
+        }
+      }
+
+      peripheral = await advertisement.connect();
+      this.peripheral = peripheral;
+      this.log(`Connected to device: ${peripheralUuid}`);
 
       const { mode, tempHumCharacteristic, batteryCharacteristic } = await this.resolveSensorCharacteristics(peripheral);
       this.log(`Resolved sensor characteristics using mode: ${mode}`);
@@ -473,7 +773,7 @@ class LYWSD02MMC_device extends Device {
       const battery = batteryData.readUInt8(0);
       this.log(`Battery level: ${battery}%`);
       if (battery >= 0 && battery <= 100) {
-        this.setCapabilityValue("measure_battery", battery);
+        await this.safeSetCapabilityValue("measure_battery", battery);
       }
 
       peripheral.once("disconnect", async () => {
