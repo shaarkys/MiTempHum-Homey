@@ -362,18 +362,18 @@
           },
           "value": "",
           "hint": {
-            "en": "Optional 32-character Xiaomi bindkey used to decrypt encrypted FE95 advertisements from LYWSD02MMC sensors.",
-            "nl": "Optionele Xiaomi bindkey van 32 tekens om versleutelde FE95-advertenties van LYWSD02MMC-sensoren te ontsleutelen.",
-            "da": "Valgfri Xiaomi-bindkey på 32 tegn til at dekryptere krypterede FE95-annoncer fra LYWSD02MMC-sensorer.",
-            "de": "Optionale Xiaomi-Bindkey mit 32 Zeichen zum Entschlüsseln verschlüsselter FE95-Werbedaten von LYWSD02MMC-Sensoren.",
-            "es": "Bindkey opcional de Xiaomi de 32 caracteres para descifrar anuncios FE95 cifrados de sensores LYWSD02MMC.",
-            "fr": "Bindkey Xiaomi optionnelle de 32 caractères pour déchiffrer les publicités FE95 chiffrées des capteurs LYWSD02MMC.",
-            "it": "Bindkey Xiaomi opzionale di 32 caratteri per decifrare gli annunci FE95 crittografati dei sensori LYWSD02MMC.",
-            "no": "Valgfri Xiaomi-bindkey på 32 tegn for å dekryptere krypterte FE95-annonser fra LYWSD02MMC-sensorer.",
-            "sv": "Valfri Xiaomi-bindkey med 32 tecken för att dekryptera krypterade FE95-annonser från LYWSD02MMC-sensorer.",
-            "pl": "Opcjonalny 32-znakowy bindkey Xiaomi do odszyfrowania zaszyfrowanych reklam FE95 z czujników LYWSD02MMC.",
-            "ru": "Необязательный 32-символьный bindkey Xiaomi для расшифровки зашифрованных FE95-объявлений датчиков LYWSD02MMC.",
-            "ko": "LYWSD02MMC 센서의 암호화된 FE95 광고를 복호화하기 위한 선택적 32자 Xiaomi bindkey입니다."
+            "en": "Optional Xiaomi bindkey used to decrypt encrypted FE95 advertisements from LYWSD02MMC sensors. Supports 32-character keys and 24-character legacy keys.",
+            "nl": "Optionele Xiaomi-bindkey om versleutelde FE95-advertenties van LYWSD02MMC-sensoren te ontsleutelen. Ondersteunt sleutels van 32 tekens en oudere sleutels van 24 tekens.",
+            "da": "Valgfri Xiaomi-bindkey til at dekryptere krypterede FE95-annoncer fra LYWSD02MMC-sensorer. Understøtter nøgler på 32 tegn og ældre nøgler på 24 tegn.",
+            "de": "Optionale Xiaomi-Bindkey zum Entschlüsseln verschlüsselter FE95-Werbedaten von LYWSD02MMC-Sensoren. Unterstützt 32-stellige Schlüssel und ältere 24-stellige Schlüssel.",
+            "es": "Bindkey opcional de Xiaomi para descifrar anuncios FE95 cifrados de sensores LYWSD02MMC. Admite claves de 32 caracteres y claves heredadas de 24 caracteres.",
+            "fr": "Bindkey Xiaomi optionnelle pour déchiffrer les publicités FE95 chiffrées des capteurs LYWSD02MMC. Prend en charge les clés de 32 caractères et les anciennes clés de 24 caractères.",
+            "it": "Bindkey Xiaomi opzionale per decifrare gli annunci FE95 crittografati dei sensori LYWSD02MMC. Supporta chiavi da 32 caratteri e chiavi legacy da 24 caratteri.",
+            "no": "Valgfri Xiaomi-bindkey for å dekryptere krypterte FE95-annonser fra LYWSD02MMC-sensorer. Støtter nøkler på 32 tegn og eldre nøkler på 24 tegn.",
+            "sv": "Valfri Xiaomi-bindkey för att dekryptera krypterade FE95-annonser från LYWSD02MMC-sensorer. Stöder nycklar på 32 tecken och äldre nycklar på 24 tecken.",
+            "pl": "Opcjonalny bindkey Xiaomi do odszyfrowywania zaszyfrowanych reklam FE95 z czujników LYWSD02MMC. Obsługuje klucze 32-znakowe i starsze klucze 24-znakowe.",
+            "ru": "Необязательный bindkey Xiaomi для расшифровки зашифрованных FE95-объявлений датчиков LYWSD02MMC. Поддерживает ключи длиной 32 символа и старые ключи длиной 24 символа.",
+            "ko": "LYWSD02MMC 센서의 암호화된 FE95 광고를 복호화하기 위한 선택적 Xiaomi bindkey입니다. 32자 키와 24자 레거시 키를 지원합니다."
           }
         }
       ]

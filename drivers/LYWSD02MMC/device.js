@@ -166,12 +166,27 @@ class LYWSD02MMC_device extends Device {
       return null;
     }
 
-    if (!/^[0-9a-f]{32}$/.test(normalized)) {
-      this.log(`Ignoring invalid bindkey format: expected 32 hex characters, got "${rawValue}"`);
+    if (/^[0-9a-f]{32}$/.test(normalized)) {
+      return Buffer.from(normalized, "hex");
+    }
+
+    if (/^[0-9a-f]{24}$/.test(normalized)) {
+      const expandedLegacyKey = `${normalized.slice(0, 12)}8d3d3c97${normalized.slice(12)}`;
+      this.log("Using 24-character legacy Xiaomi bindkey format expanded to 16 bytes.");
+      return Buffer.from(expandedLegacyKey, "hex");
+    }
+
+    if (!/^[0-9a-f]+$/.test(normalized)) {
+      this.log(`Ignoring invalid bindkey format: expected hexadecimal characters, got "${rawValue}"`);
       return null;
     }
 
-    return Buffer.from(normalized, "hex");
+    if (normalized.length !== 24 && normalized.length !== 32) {
+      this.log(`Ignoring invalid bindkey length: expected 24 or 32 hex characters, got ${normalized.length}`);
+      return null;
+    }
+
+    return null;
   }
 
   logAdvertisementContext(advertisement) {
@@ -470,11 +485,16 @@ class LYWSD02MMC_device extends Device {
 
   async applyParsedAdvertisementValues(parsed) {
     if (!parsed || !parsed.values) {
-      return false;
+      return {
+        hasTemperature: false,
+        hasHumidity: false,
+        hasCompleteMeasurement: false,
+      };
     }
 
     const { temperature, humidity, battery } = parsed.values;
-    const hasTempOrHumidity = temperature !== undefined || humidity !== undefined;
+    const hasTemperature = temperature !== undefined;
+    const hasHumidity = humidity !== undefined;
 
     this.log(
       `Parsed FE95 advertisement - model: ${parsed.deviceType}, version: ${parsed.version}, encrypted: ${parsed.encrypted}, payload: ${parsed.payloadHex || "n/a"}, values: ${JSON.stringify(parsed.values)}`,
@@ -504,7 +524,11 @@ class LYWSD02MMC_device extends Device {
       }
     }
 
-    return hasTempOrHumidity;
+    return {
+      hasTemperature,
+      hasHumidity,
+      hasCompleteMeasurement: hasTemperature && hasHumidity,
+    };
   }
 
   async resolveSensorCharacteristics(peripheral) {
@@ -752,11 +776,17 @@ class LYWSD02MMC_device extends Device {
 
       const parsedAdvertisement = this.parseFe95Advertisement(advertisement);
       if (parsedAdvertisement) {
-        const handledPassively = await this.applyParsedAdvertisementValues(parsedAdvertisement);
-        if (handledPassively) {
+        const passiveResult = await this.applyParsedAdvertisementValues(parsedAdvertisement);
+        if (passiveResult.hasCompleteMeasurement) {
           this.log("Using passive FE95 advertisement data, skipping GATT subscription.");
           this.setWarning(null);
           return;
+        }
+
+        if (passiveResult.hasTemperature || passiveResult.hasHumidity) {
+          this.log(
+            `Passive FE95 advertisement was partial (temperature: ${passiveResult.hasTemperature}, humidity: ${passiveResult.hasHumidity}); continuing to GATT subscription for missing values.`,
+          );
         }
       }
 
