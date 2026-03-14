@@ -50,6 +50,7 @@ const FE95_OBJECTS = {
   battery: 0x100a,
   temperatureHumidity: 0x100d,
 };
+const PASSIVE_FE95_DISCOVERY_MS = 4000;
 
 class LYWSD02MMC_device extends Device {
   /**
@@ -292,6 +293,15 @@ class LYWSD02MMC_device extends Device {
     return serviceData.find((entry) => uuidsMatch(entry && entry.uuid, UUIDS.miBeaconService)) || null;
   }
 
+  advertisementMatchesTarget(advertisement, targetAddress, targetUuid) {
+    const normalizedAddress = normalizeMac(advertisement && advertisement.address);
+    const normalizedUuid = normalizeMac(advertisement && advertisement.uuid);
+    return (
+      (targetAddress && normalizedAddress === normalizeMac(targetAddress))
+      || (targetUuid && normalizedUuid === normalizeMac(targetUuid))
+    );
+  }
+
   parseMiBeaconPayload(payload) {
     const parsed = {};
     let offset = 0;
@@ -528,6 +538,57 @@ class LYWSD02MMC_device extends Device {
       hasTemperature,
       hasHumidity,
       hasCompleteMeasurement: hasTemperature && hasHumidity,
+    };
+  }
+
+  shouldPreferPassiveOnly(advertisement, parsedAdvertisement) {
+    const serviceUuids = Array.isArray(advertisement && advertisement.serviceUuids) ? advertisement.serviceUuids : [];
+    return Boolean(
+      parsedAdvertisement
+      && parsedAdvertisement.deviceType === "LYWSD02MMC"
+      && serviceUuids.length === 0,
+    );
+  }
+
+  async waitForAdditionalFe95Measurements(targetAddress, targetUuid) {
+    this.log(`Starting passive FE95 rescan for ${PASSIVE_FE95_DISCOVERY_MS}ms to collect additional LYWSD02MMC advertisements.`);
+    const advertisements = await this.homey.ble.discover([], PASSIVE_FE95_DISCOVERY_MS);
+    const matchingAdvertisements = Array.isArray(advertisements)
+      ? advertisements.filter((advertisement) => this.advertisementMatchesTarget(advertisement, targetAddress, targetUuid))
+      : [];
+
+    this.log(`Passive FE95 rescan found ${matchingAdvertisements.length} matching advertisements.`);
+
+    const mergedValues = {};
+    let lastParsedAdvertisement = null;
+
+    for (const candidate of matchingAdvertisements) {
+      this.logAdvertisementContext(candidate);
+      const parsedAdvertisement = this.parseFe95Advertisement(candidate);
+      if (!parsedAdvertisement) {
+        continue;
+      }
+
+      lastParsedAdvertisement = parsedAdvertisement;
+      Object.assign(mergedValues, parsedAdvertisement.values);
+
+      if (mergedValues.temperature !== undefined && mergedValues.humidity !== undefined) {
+        return {
+          ...parsedAdvertisement,
+          values: mergedValues,
+          payloadHex: parsedAdvertisement.payloadHex || "merged",
+        };
+      }
+    }
+
+    if (!lastParsedAdvertisement) {
+      return null;
+    }
+
+    return {
+      ...lastParsedAdvertisement,
+      values: mergedValues,
+      payloadHex: lastParsedAdvertisement.payloadHex || "merged",
     };
   }
 
@@ -776,7 +837,18 @@ class LYWSD02MMC_device extends Device {
 
       const parsedAdvertisement = this.parseFe95Advertisement(advertisement);
       if (parsedAdvertisement) {
-        const passiveResult = await this.applyParsedAdvertisementValues(parsedAdvertisement);
+        let effectiveParsedAdvertisement = parsedAdvertisement;
+        let passiveResult = await this.applyParsedAdvertisementValues(effectiveParsedAdvertisement);
+
+        if (!passiveResult.hasCompleteMeasurement && this.shouldPreferPassiveOnly(advertisement, effectiveParsedAdvertisement)) {
+          this.log("Passive FE95 advertisement is incomplete for LYWSD02MMC with no exposed service UUIDs; rescanning before any GATT fallback.");
+          const rescannedAdvertisement = await this.waitForAdditionalFe95Measurements(advertisement.address, peripheralUuid);
+          if (rescannedAdvertisement) {
+            effectiveParsedAdvertisement = rescannedAdvertisement;
+            passiveResult = await this.applyParsedAdvertisementValues(effectiveParsedAdvertisement);
+          }
+        }
+
         if (passiveResult.hasCompleteMeasurement) {
           this.log("Using passive FE95 advertisement data, skipping GATT subscription.");
           this.setWarning(null);
@@ -787,6 +859,10 @@ class LYWSD02MMC_device extends Device {
           this.log(
             `Passive FE95 advertisement was partial (temperature: ${passiveResult.hasTemperature}, humidity: ${passiveResult.hasHumidity}); continuing to GATT subscription for missing values.`,
           );
+        } else if (this.shouldPreferPassiveOnly(advertisement, effectiveParsedAdvertisement)) {
+          this.log("Passive FE95 advertisement still has no measurement objects after rescan; skipping GATT fallback for this poll on LYWSD02MMC.");
+          this.setWarning(null);
+          return;
         }
       }
 
