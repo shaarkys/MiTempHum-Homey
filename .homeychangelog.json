@@ -115,5 +115,8 @@
   },
   "1.2.34": {
     "en": "Experimental support for LYWSD02MMC with support of Xiaomi bindkey"
+  },
+  "1.2.35": {
+    "en": "Experimental support for LYWSD02MMC with support of Xiaomi bindkey"
   }
 }
