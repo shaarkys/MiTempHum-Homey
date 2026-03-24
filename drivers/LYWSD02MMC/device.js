@@ -860,9 +860,7 @@ class LYWSD02MMC_device extends Device {
             `Passive FE95 advertisement was partial (temperature: ${passiveResult.hasTemperature}, humidity: ${passiveResult.hasHumidity}); continuing to GATT subscription for missing values.`,
           );
         } else if (this.shouldPreferPassiveOnly(advertisement, effectiveParsedAdvertisement)) {
-          this.log("Passive FE95 advertisement still has no measurement objects after rescan; skipping GATT fallback for this poll on LYWSD02MMC.");
-          this.setWarning(null);
-          return;
+          this.log("Passive FE95 advertisement still has no measurement objects after rescan; continuing to GATT fallback for this poll on LYWSD02MMC.");
         }
       }
 
