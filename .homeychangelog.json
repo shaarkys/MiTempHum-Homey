@@ -121,5 +121,8 @@
   },
   "1.2.36": {
     "en": "LYWSD02MMC fixed polling so sensors that advertise incomplete FE95 frames"
+  },
+  "1.2.37": {
+    "en": "Improved discovery fallback for LYWSD02MMC"
   }
 }
