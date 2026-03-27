@@ -284,8 +284,15 @@ class LYWSD02MMC_device extends Device {
     this.log(`Enabled notifications through CCCD descriptor: ${cccdDescriptor.uuid}`);
   }
 
-  isInvalidUuidSubscriptionError(error) {
-    return Boolean(error && typeof error.message === "string" && error.message.includes("Invalid uuid"));
+  shouldUseDiscoveryFallback(error) {
+    return Boolean(
+      error
+      && typeof error.message === "string"
+      && (
+        error.message.includes("Invalid uuid")
+        || error.message.includes("No characteristic found with UUID")
+      ),
+    );
   }
 
   getFe95ServiceData(advertisement) {
@@ -602,7 +609,7 @@ class LYWSD02MMC_device extends Device {
         batteryCharacteristic: await this.getDirectCharacteristic(service, UUIDS.lywsd02BatteryCharacteristic),
       };
     } catch (error) {
-      if (!this.isInvalidUuidSubscriptionError(error)) {
+      if (!this.shouldUseDiscoveryFallback(error)) {
         this.logErrorDetails("Direct UUID lookup failed with non-fallback error", error);
         throw error;
       }
@@ -902,7 +909,7 @@ class LYWSD02MMC_device extends Device {
       } catch (error) {
         this.notificationCharacteristic = null;
         this.logErrorDetails(`subscribeToNotifications failed in mode ${mode}`, error);
-        if (mode !== "fallback" || !this.isInvalidUuidSubscriptionError(error)) {
+        if (mode !== "fallback" || !this.shouldUseDiscoveryFallback(error)) {
           throw error;
         }
 
