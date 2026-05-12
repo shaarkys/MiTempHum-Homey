@@ -10,11 +10,38 @@ const DISCOVERY_SCAN_MS = 10000;
 const DISCOVERY_WAIT_MS = 12500;
 const DISCOVERY_CACHE_TTL_MS = 30000;
 const DISCOVERY_SERVICE_UUIDS = [UUID_FE95_LONG, UUID_FEF5_LONG];
-const DISCOVERY_SERVICE_UUID_SHORTS = [UUID_FE95_SHORT, UUID_FEF5_SHORT];
-const isAcceptedDiscoveryUuid = (uuid) => {
+const FE95_SUPPORTED_DEVICE_IDS = new Set([0x045b, 0x16e4, 0x2542]);
+const isUuidFe95 = (uuid) => {
   const normalized = normalizeUuid(uuid);
-  return DISCOVERY_SERVICE_UUID_SHORTS.includes(normalized) || DISCOVERY_SERVICE_UUIDS.includes(normalized);
+  return normalized === UUID_FE95_SHORT || normalized === UUID_FE95_LONG;
 };
+const isUuidFef5 = (uuid) => {
+  const normalized = normalizeUuid(uuid);
+  return normalized === UUID_FEF5_SHORT || normalized === UUID_FEF5_LONG;
+};
+const toBuffer = (value) => {
+  if (Buffer.isBuffer(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0) {
+    return Buffer.from(value, "hex");
+  }
+
+  return null;
+};
+const hasSupportedFe95Payload = (serviceData) => serviceData.some((entry) => {
+  if (!entry || !isUuidFe95(entry.uuid)) {
+    return false;
+  }
+
+  const data = toBuffer(entry.data);
+  if (!data || data.length < 5) {
+    return false;
+  }
+
+  return FE95_SUPPORTED_DEVICE_IDS.has(data.readUInt16LE(2));
+});
 const withTimeout = (promise, ms) => {
   let timer;
   return Promise.race([
@@ -107,18 +134,19 @@ class LYWSD02MMC_Driver extends Driver {
           const nameLower = name.toLowerCase();
           const isLywsd02Name = nameLower.includes("lywsd02");
           const isConnectable = advertisement.connectable !== false;
-          const hasAcceptedUuid = serviceUuids.some(isAcceptedDiscoveryUuid)
-            || serviceData.some((entry) => isAcceptedDiscoveryUuid(entry && entry.uuid));
+          const hasFef5ServiceUuid = serviceUuids.some(isUuidFef5);
+          const hasFef5ServiceData = serviceData.some((entry) => isUuidFef5(entry && entry.uuid));
+          const hasSupportedFe95ServiceData = hasSupportedFe95Payload(serviceData);
 
           if (!isConnectable) {
             return false;
           }
 
           // Positive matching only:
-          // - FE95 is the Xiaomi MiBeacon service data used by LYWSD02MMC advertisements.
+          // - FE95 is shared by Xiaomi MiBeacon devices, so only supported LYWSD02 payload ids are accepted.
           // - FEF5 is retained for compatibility with earlier observed Bridge advertisements.
           // - If the name explicitly says LYWSD02, accept it as well.
-          return hasAcceptedUuid || isLywsd02Name;
+          return hasSupportedFe95ServiceData || hasFef5ServiceUuid || hasFef5ServiceData || isLywsd02Name;
         })
         .forEach((advertisement) => {
           // Log the devices that will be added
