@@ -124,5 +124,8 @@
   },
   "1.2.37": {
     "en": "Improved discovery fallback for LYWSD02MMC"
+  },
+  "1.2.38": {
+    "en": "Improve LYWSD02MMC pairing"
   }
 }
