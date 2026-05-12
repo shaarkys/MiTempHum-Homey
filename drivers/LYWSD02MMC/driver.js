@@ -2,7 +2,6 @@
 
 const { Driver } = require("homey");
 const normalizeUuid = (uuid) => (uuid || "").toLowerCase().replace(/-/g, "");
-const UUID_181A_LONG = "0000181a00001000800000805f9b34fb";
 const UUID_FE95_LONG = "0000fe9500001000800000805f9b34fb";
 const UUID_FEF5_LONG = "0000fef500001000800000805f9b34fb";
 const UUID_FEF5_SHORT = "fef5";
@@ -10,14 +9,11 @@ const UUID_FE95_SHORT = "fe95";
 const DISCOVERY_SCAN_MS = 10000;
 const DISCOVERY_WAIT_MS = 12500;
 const DISCOVERY_CACHE_TTL_MS = 30000;
-const DISCOVERY_SERVICE_UUIDS = [UUID_181A_LONG, UUID_FEF5_LONG, UUID_FE95_LONG];
-const isUuidFef5 = (uuid) => {
+const DISCOVERY_SERVICE_UUIDS = [UUID_FE95_LONG, UUID_FEF5_LONG];
+const DISCOVERY_SERVICE_UUID_SHORTS = [UUID_FE95_SHORT, UUID_FEF5_SHORT];
+const isAcceptedDiscoveryUuid = (uuid) => {
   const normalized = normalizeUuid(uuid);
-  return normalized === UUID_FEF5_SHORT || normalized === UUID_FEF5_LONG;
-};
-const isUuidFe95 = (uuid) => {
-  const normalized = normalizeUuid(uuid);
-  return normalized === UUID_FE95_SHORT || normalized === UUID_FE95_LONG;
+  return DISCOVERY_SERVICE_UUID_SHORTS.includes(normalized) || DISCOVERY_SERVICE_UUIDS.includes(normalized);
 };
 const withTimeout = (promise, ms) => {
   let timer;
@@ -111,18 +107,18 @@ class LYWSD02MMC_Driver extends Driver {
           const nameLower = name.toLowerCase();
           const isLywsd02Name = nameLower.includes("lywsd02");
           const isConnectable = advertisement.connectable !== false;
-          const hasFef5 = serviceUuids.some(isUuidFef5) || serviceData.some((entry) => isUuidFef5(entry.uuid));
-          const hasFe95 = serviceUuids.some(isUuidFe95) || serviceData.some((entry) => isUuidFe95(entry.uuid));
+          const hasAcceptedUuid = serviceUuids.some(isAcceptedDiscoveryUuid)
+            || serviceData.some((entry) => isAcceptedDiscoveryUuid(entry && entry.uuid));
 
           if (!isConnectable) {
             return false;
           }
 
           // Positive matching only:
-          // - FEF5 is the strongest signal for LYWSD02 in Homey Bridge advertisements.
           // - FE95 is the Xiaomi MiBeacon service data used by LYWSD02MMC advertisements.
+          // - FEF5 is retained for compatibility with earlier observed Bridge advertisements.
           // - If the name explicitly says LYWSD02, accept it as well.
-          return hasFef5 || hasFe95 || isLywsd02Name;
+          return hasAcceptedUuid || isLywsd02Name;
         })
         .forEach((advertisement) => {
           // Log the devices that will be added
