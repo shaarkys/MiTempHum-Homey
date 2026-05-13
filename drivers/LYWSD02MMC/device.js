@@ -38,6 +38,8 @@ const UUIDS = {
   lywsd02Service: "ebe0ccb07a0a4b0c8a1a6ff2997da3a6",
   lywsd02DataCharacteristic: "ebe0ccc17a0a4b0c8a1a6ff2997da3a6",
   lywsd02BatteryCharacteristic: "ebe0ccc47a0a4b0c8a1a6ff2997da3a6",
+  lywsd02TimeCharacteristic: "ebe0ccb77a0a4b0c8a1a6ff2997da3a6",
+  lywsd02DataCountCharacteristic: "ebe0ccb97a0a4b0c8a1a6ff2997da3a6",
 };
 const FE95_SUPPORTED_DEVICE_TYPES = {
   0x045b: "LYWSD02",
@@ -232,6 +234,26 @@ class LYWSD02MMC_device extends Device {
     }
 
     return characteristic;
+  }
+
+  findCharacteristicByUuid(characteristics, expectedUuid) {
+    return characteristics.find((candidate) => uuidsMatch(candidate.uuid, expectedUuid)) || null;
+  }
+
+  getKnownCharacteristicLabel(uuid) {
+    if (uuidsMatch(uuid, UUIDS.lywsd02DataCharacteristic)) {
+      return `${uuid} (current temperature/humidity/voltage)`;
+    }
+    if (uuidsMatch(uuid, UUIDS.lywsd02BatteryCharacteristic)) {
+      return `${uuid} (battery percentage)`;
+    }
+    if (uuidsMatch(uuid, UUIDS.lywsd02TimeCharacteristic)) {
+      return `${uuid} (clock time, not sensor data)`;
+    }
+    if (uuidsMatch(uuid, UUIDS.lywsd02DataCountCharacteristic)) {
+      return `${uuid} (history data count, not sensor data)`;
+    }
+    return uuid;
   }
 
   async getDirectService(peripheral, serviceUuid) {
@@ -617,10 +639,27 @@ class LYWSD02MMC_device extends Device {
       this.log(`Direct UUID lookup failed, switching to discovery fallback: ${error.message}`);
       const service = await this.getServiceByUuid(peripheral, UUIDS.lywsd02Service);
       this.log("Sensor characteristic resolution mode: discovery fallback");
+      const characteristics = await service.discoverCharacteristics();
+      this.log(`Discovered characteristics for ${service.uuid}: ${this.formatUuidList(characteristics)}`);
+      const tempHumCharacteristic = this.findCharacteristicByUuid(characteristics, UUIDS.lywsd02DataCharacteristic);
+      const batteryCharacteristic = this.findCharacteristicByUuid(characteristics, UUIDS.lywsd02BatteryCharacteristic);
+
+      if (!tempHumCharacteristic || !batteryCharacteristic) {
+        const availableCharacteristics = characteristics
+          .map((candidate) => this.getKnownCharacteristicLabel(candidate.uuid))
+          .join(", ") || "none";
+
+        throw new Error(
+          `GATT measurement characteristics are not exposed by this LYWSD02MMC firmware. `
+          + `Needed ${UUIDS.lywsd02DataCharacteristic} and ${UUIDS.lywsd02BatteryCharacteristic}; `
+          + `available characteristics: ${availableCharacteristics}. Use FE95 advertisements${this.bindkey ? "" : " with a valid bindkey for encrypted devices"}.`,
+        );
+      }
+
       return {
         mode: "fallback",
-        tempHumCharacteristic: await this.getCharacteristicByUuid(service, UUIDS.lywsd02DataCharacteristic),
-        batteryCharacteristic: await this.getCharacteristicByUuid(service, UUIDS.lywsd02BatteryCharacteristic),
+        tempHumCharacteristic,
+        batteryCharacteristic,
       };
     }
   }
@@ -676,6 +715,9 @@ class LYWSD02MMC_device extends Device {
       if (changedKeys.includes("bindkey")) {
         this.bindkey = this.getBindkeyBuffer(newSettings.bindkey);
         this.log(`Device ${this.getName()} bindkey was ${this.bindkey ? "updated" : "cleared or invalid"}`);
+        if (this.bindkey) {
+          this.homey.setTimeout(() => this.subscribeToBLENotifications(), 1000);
+        }
       }
     } catch (error) {
       this.log(`Error during settings update: ${error}`);
