@@ -130,5 +130,8 @@
   },
   "1.2.39": {
     "en": "Improve LYWSD02MMC pairing"
+  },
+  "1.2.40": {
+    "en": "Improved LYWSD02MMC behaviour"
   }
 }
