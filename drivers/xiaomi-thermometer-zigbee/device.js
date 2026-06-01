@@ -28,6 +28,7 @@ module.exports = class XiaomiThermometerZigbeeDevice extends ZigBeeDevice {
 
     // Log device information
     this.logDeviceInfo();
+    this.logFirmwareDiagnostics("node initialization");
 
     // Get initial settings
     this.temperatureOffset = this.getSetting("temperature_offset") || 0;
@@ -102,6 +103,23 @@ module.exports = class XiaomiThermometerZigbeeDevice extends ZigBeeDevice {
   logDeviceInfo() {
     const deviceId = this.getData().id || this.getData().token;
     this.log(`Device ID: ${deviceId}, Name: ${this.getName()}`);
+  }
+
+  onEndDeviceAnnounce() {
+    super.onEndDeviceAnnounce();
+    this.logFirmwareDiagnostics("end device announce", { skipCache: true });
+  }
+
+  async logFirmwareDiagnostics(context, { skipCache = false } = {}) {
+    const manufacturerName = this.node.manufacturerName || "unknown";
+    const productId = this.node.productId || "unknown";
+
+    try {
+      const swBuildId = await this.getSwBuildId({ skipCache });
+      this.log(`Firmware diagnostics (${context}) - manufacturerName: ${manufacturerName}, productId: ${productId}, swBuildId: ${swBuildId}`);
+    } catch (error) {
+      this.log(`Firmware diagnostics (${context}) - manufacturerName: ${manufacturerName}, productId: ${productId}, failed to read swBuildId: ${error.message || error}`);
+    }
   }
 
   // Handle settings changes
