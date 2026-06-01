@@ -133,5 +133,8 @@
   },
   "1.2.40": {
     "en": "Improved LYWSD02MMC behaviour"
+  },
+  "1.2.41": {
+    "en": "Added Zigbee firmware updates for LYWSD03MMC sensors, including direct pvvx updates for LYWSD03MMC-z and a staged migration path for older devbis firmware."
   }
 }
