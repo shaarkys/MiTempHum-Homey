@@ -51,6 +51,7 @@ class MyDriver extends Driver {
             },
             store: {
               peripheralUuid: advertisement.uuid,
+              address: advertisement.address,
             },
           };
         });
