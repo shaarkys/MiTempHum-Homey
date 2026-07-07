@@ -136,5 +136,8 @@
   },
   "1.2.41": {
     "en": "Added Zigbee firmware updates for LYWSD03MMC sensors, including direct pvvx updates for LYWSD03MMC-z and a staged migration path for older devbis firmware."
+  },
+  "1.2.42": {
+    "en": "Added BLE advertisement subscriptions and a low-RSSI guard that avoids active BLE connections below -85 dBm."
   }
 }
