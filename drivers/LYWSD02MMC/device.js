@@ -53,6 +53,8 @@ const FE95_OBJECTS = {
   temperatureHumidity: 0x100d,
 };
 const PASSIVE_FE95_DISCOVERY_MS = 4000;
+const ADVERTISEMENT_RATE_LIMIT_MS = 5000;
+const MIN_CONNECTABLE_RSSI = -85;
 
 class LYWSD02MMC_device extends Device {
   /**
@@ -105,6 +107,10 @@ class LYWSD02MMC_device extends Device {
       this.subscriptionInProgress = false;
       this.notificationTimeout = null;
       this.notificationCharacteristic = null;
+      this.advertisementSubscriptionActive = false;
+      this.lastCompleteAdvertisementAt = null;
+
+      await this.startAdvertisementSubscription();
 
       // Enable notifications and subscribe to them
       // not working / not required ?
@@ -678,6 +684,118 @@ class LYWSD02MMC_device extends Device {
     this.setNotificationTimeout();
   }
 
+  supportsAdvertisementSubscriptions() {
+    return Boolean(
+      typeof this.homey.hasFeature === "function"
+      && this.homey.hasFeature("ble-advertisements")
+      && this.homey.ble
+      && typeof this.homey.ble.subscribeToAdvertisements === "function"
+      && typeof this.homey.ble.unsubscribeFromAdvertisements === "function",
+    );
+  }
+
+  hasRecentCompleteAdvertisement() {
+    if (!this.lastCompleteAdvertisementAt) {
+      return false;
+    }
+
+    const maxAgeMs = Math.max(this.reconnectInterval * 1000, ADVERTISEMENT_RATE_LIMIT_MS * 2);
+    return Date.now() - this.lastCompleteAdvertisementAt <= maxAgeMs;
+  }
+
+  async startAdvertisementSubscription() {
+    if (!this.supportsAdvertisementSubscriptions()) {
+      this.log("BLE advertisement subscriptions are not available; using find/GATT fallback.");
+      return;
+    }
+
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      this.log("Missing peripheral UUID; using find/GATT fallback.");
+      return;
+    }
+
+    try {
+      await this.homey.ble.subscribeToAdvertisements(
+        peripheralUuid,
+        { rateLimitMs: ADVERTISEMENT_RATE_LIMIT_MS },
+        (advertisement) => {
+          this.processAdvertisementUpdate(advertisement).catch((error) => {
+            this.logErrorDetails("Error processing subscribed BLE advertisement", error);
+          });
+        },
+      );
+      this.advertisementSubscriptionActive = true;
+      this.log(`Subscribed to BLE advertisements for ${peripheralUuid}`);
+    } catch (error) {
+      this.advertisementSubscriptionActive = false;
+      this.log(`Could not subscribe to BLE advertisements, using find/GATT fallback: ${error.message || error}`);
+    }
+  }
+
+  async stopAdvertisementSubscription() {
+    if (!this.advertisementSubscriptionActive || !this.supportsAdvertisementSubscriptions()) {
+      return;
+    }
+
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      return;
+    }
+
+    try {
+      await this.homey.ble.unsubscribeFromAdvertisements(peripheralUuid);
+      this.log(`Unsubscribed from BLE advertisements for ${peripheralUuid}`);
+    } catch (error) {
+      this.log(`Failed to unsubscribe from BLE advertisements: ${error.message || error}`);
+    } finally {
+      this.advertisementSubscriptionActive = false;
+    }
+  }
+
+  async processAdvertisementUpdate(advertisement) {
+    if (!advertisement) {
+      return;
+    }
+
+    const store = typeof this.getStore === "function" ? this.getStore() : {};
+    const data = this.getData() || {};
+    const targetAddress = store && typeof store.address === "string" ? store.address : data.id;
+    const targetUuid = this.getPeripheralUuid();
+    if (!this.advertisementMatchesTarget(advertisement, targetAddress, targetUuid)) {
+      return;
+    }
+
+    this.logAdvertisementContext(advertisement);
+
+    if (typeof advertisement.rssi === "number") {
+      await this.safeSetCapabilityValue("measure_rssi", advertisement.rssi);
+    }
+
+    const parsedAdvertisement = this.parseFe95Advertisement(advertisement);
+    if (!parsedAdvertisement) {
+      return;
+    }
+
+    const passiveResult = await this.applyParsedAdvertisementValues(parsedAdvertisement);
+    if (passiveResult.hasCompleteMeasurement) {
+      this.lastCompleteAdvertisementAt = Date.now();
+      this.setWarning(null);
+      await this.stopBLESubscription();
+    }
+  }
+
+  async shouldSkipActiveConnection(advertisement) {
+    if (!advertisement || typeof advertisement.rssi !== "number" || advertisement.rssi > MIN_CONNECTABLE_RSSI) {
+      return false;
+    }
+
+    await this.processAdvertisementUpdate(advertisement);
+    this.log(`Skipping active BLE connection because RSSI is ${advertisement.rssi} dBm (threshold: ${MIN_CONNECTABLE_RSSI} dBm).`);
+    await this.setWarning(`RSSI too weak for active BLE connection (${advertisement.rssi} dBm); using advertisements only.`);
+    return true;
+  }
+
   /**
    * onAdded is called when the user adds the device, called just after pairing.
    */
@@ -743,11 +861,21 @@ class LYWSD02MMC_device extends Device {
   async onDeleted() {
     try {
       this.log("LYWSD02MMC BLE has been deleted");
+      await this.stopAdvertisementSubscription();
       await this.stopBLESubscription();
       this.polling = false;
       clearInterval(this.pollingInterval);
     } catch (error) {
       this.log(`Error during deletion: ${error}`);
+    }
+  }
+
+  async onUninit() {
+    await this.stopAdvertisementSubscription();
+    await this.stopBLESubscription();
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
     }
   }
 
@@ -764,6 +892,10 @@ class LYWSD02MMC_device extends Device {
 
     try {
       const advertisement = await this.homey.ble.find(peripheralUuid);
+      if (await this.shouldSkipActiveConnection(advertisement)) {
+        return;
+      }
+
       peripheral = await advertisement.connect();
       this.log(`Connected to device: ${peripheralUuid}`);
 
@@ -823,6 +955,10 @@ class LYWSD02MMC_device extends Device {
       }
 
       const advertisement = await this.homey.ble.find(peripheralUuid);
+      if (await this.shouldSkipActiveConnection(advertisement)) {
+        return;
+      }
+
       peripheral = await advertisement.connect();
       this.log(`Connected to device: ${peripheralUuid}`);
       const deviceInfoService = await this.getServiceByUuid(peripheral, UUIDS.deviceInformationService);
@@ -862,6 +998,11 @@ class LYWSD02MMC_device extends Device {
     let peripheral;
 
     try {
+      if (this.advertisementSubscriptionActive && this.hasRecentCompleteAdvertisement()) {
+        this.log("Recent complete FE95 advertisement received; skipping GATT subscription for this poll.");
+        return;
+      }
+
       await this.stopBLESubscription();
       const advertisement = await this.homey.ble.find(peripheralUuid);
       this.logAdvertisementContext(advertisement);
@@ -875,6 +1016,10 @@ class LYWSD02MMC_device extends Device {
 
       // Set the RSSI capability value
       await this.safeSetCapabilityValue("measure_rssi", rssi);
+
+      if (await this.shouldSkipActiveConnection(advertisement)) {
+        return;
+      }
 
       const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
       this.log(`Device RSSI Percentage: ${rssiPercentage}%`);

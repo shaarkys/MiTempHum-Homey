@@ -59,6 +59,7 @@ class XiaomiThermometerDriver extends Driver {
             },
             store: {
               peripheralUuid: advertisement.uuid,
+              address: advertisement.address,
             },
           };
         });

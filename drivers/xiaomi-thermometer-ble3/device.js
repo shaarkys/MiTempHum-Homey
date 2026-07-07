@@ -1,6 +1,8 @@
 "use strict";
 
 const { Device } = require("homey");
+const ADVERTISEMENT_RATE_LIMIT_MS = 5000;
+const MIN_CONNECTABLE_RSSI = -85;
 
 class XiaomiThermometerDevice extends Device {
   /**
@@ -40,14 +42,141 @@ class XiaomiThermometerDevice extends Device {
     // Get initial settings
     this.temperatureOffset = this.getSetting("temperature_offset") || 0;
     this.reconnectInterval = this.getSetting("reconnect_interval") || 300; // Default to 5 minutes
+    this.advertisementSubscriptionActive = false;
     this.log(`Reconnect interval is set to ${this.reconnectInterval} seconds.`);
 
+    await this.startAdvertisementSubscription();
     // Subscribe to BLE notifications
     await this.subscribeToBLENotifications();
 
     // Set up polling
     this.addListener("poll", this.subscribeToBLENotifications.bind(this));
     this.pollDevice();
+  }
+
+  getPeripheralUuid() {
+    const store = typeof this.getStore === "function" ? this.getStore() : {};
+    const storePeripheralUuid = store && typeof store.peripheralUuid === "string" ? store.peripheralUuid : "";
+    if (storePeripheralUuid) {
+      return storePeripheralUuid.toLowerCase().replace(/:/g, "");
+    }
+
+    const data = this.getData() || {};
+    const legacyId = typeof data.id === "string" ? data.id : "";
+    return legacyId.toLowerCase().replace(/:/g, "");
+  }
+
+  advertisementMatchesTarget(advertisement) {
+    const store = typeof this.getStore === "function" ? this.getStore() : {};
+    const data = this.getData() || {};
+    const targetAddress = (store.address || data.id || "").toLowerCase();
+    const targetUuid = this.getPeripheralUuid();
+    const advertisementAddress = (advertisement && advertisement.address || "").toLowerCase();
+    const advertisementUuid = (advertisement && advertisement.uuid || "").toLowerCase().replace(/:/g, "");
+
+    return Boolean(
+      (targetAddress && advertisementAddress === targetAddress)
+      || (targetUuid && advertisementUuid === targetUuid),
+    );
+  }
+
+  supportsAdvertisementSubscriptions() {
+    return Boolean(
+      typeof this.homey.hasFeature === "function"
+      && this.homey.hasFeature("ble-advertisements")
+      && this.homey.ble
+      && typeof this.homey.ble.subscribeToAdvertisements === "function"
+      && typeof this.homey.ble.unsubscribeFromAdvertisements === "function",
+    );
+  }
+
+  async startAdvertisementSubscription() {
+    if (!this.supportsAdvertisementSubscriptions()) {
+      this.log("BLE advertisement subscriptions are not available; using find/GATT fallback.");
+      return;
+    }
+
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      this.log("Missing peripheral UUID; using find/GATT fallback.");
+      return;
+    }
+
+    try {
+      await this.homey.ble.subscribeToAdvertisements(
+        peripheralUuid,
+        { rateLimitMs: ADVERTISEMENT_RATE_LIMIT_MS },
+        (advertisement) => {
+          this.processAdvertisementUpdate(advertisement).catch((error) => {
+            this.error("Error processing advertisement:", error);
+          });
+        },
+      );
+      this.advertisementSubscriptionActive = true;
+      this.log(`Subscribed to BLE advertisements for ${peripheralUuid}`);
+    } catch (error) {
+      this.advertisementSubscriptionActive = false;
+      this.log(`Could not subscribe to BLE advertisements, using find/GATT fallback: ${error.message || error}`);
+    }
+  }
+
+  async stopAdvertisementSubscription() {
+    if (!this.advertisementSubscriptionActive || !this.supportsAdvertisementSubscriptions()) {
+      return;
+    }
+
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      return;
+    }
+
+    try {
+      await this.homey.ble.unsubscribeFromAdvertisements(peripheralUuid);
+      this.log(`Unsubscribed from BLE advertisements for ${peripheralUuid}`);
+    } catch (error) {
+      this.log(`Failed to unsubscribe from BLE advertisements: ${error.message || error}`);
+    } finally {
+      this.advertisementSubscriptionActive = false;
+    }
+  }
+
+  async processAdvertisementUpdate(advertisement) {
+    if (!advertisement || !this.advertisementMatchesTarget(advertisement)) {
+      return;
+    }
+
+    if (typeof advertisement.rssi === "number") {
+      await this.setCapabilityValue("measure_rssi", advertisement.rssi).catch((error) => {
+        this.error("Error setting 'measure_rssi' from advertisement:", error);
+      });
+      if (advertisement.rssi <= MIN_CONNECTABLE_RSSI) {
+        await this.setWarning(`RSSI too weak for active BLE connection (${advertisement.rssi} dBm); using advertisements only.`);
+      } else {
+        await this.setWarning(null).catch((error) => this.error("Error clearing RSSI warning:", error));
+      }
+    }
+
+    const serviceData = Array.isArray(advertisement.serviceData) ? advertisement.serviceData : [];
+    serviceData.forEach((entry) => {
+      if (!entry || !entry.data) {
+        return;
+      }
+
+      const data = Buffer.isBuffer(entry.data) ? entry.data : Buffer.from(entry.data, "hex");
+      if (data.length === 5) {
+        this.updateTag(data).catch((error) => this.error("Error updating from advertisement:", error));
+      }
+    });
+  }
+
+  async shouldSkipActiveConnection(advertisement) {
+    if (!advertisement || typeof advertisement.rssi !== "number" || advertisement.rssi > MIN_CONNECTABLE_RSSI) {
+      return false;
+    }
+
+    await this.processAdvertisementUpdate(advertisement);
+    this.log(`Skipping active BLE connection because RSSI is ${advertisement.rssi} dBm (threshold: ${MIN_CONNECTABLE_RSSI} dBm).`);
+    return true;
   }
 
   /**
@@ -87,6 +216,14 @@ class XiaomiThermometerDevice extends Device {
    */
   async onDeleted() {
     this.log("Xiaomi LYWSD03MMC BLE (non ATC) has been deleted");
+    await this.stopAdvertisementSubscription();
+    await this.stopBLESubscription();
+    this.polling = false;
+    clearInterval(this.pollingInterval);
+  }
+
+  async onUninit() {
+    await this.stopAdvertisementSubscription();
     await this.stopBLESubscription();
     this.polling = false;
     clearInterval(this.pollingInterval);
@@ -105,6 +242,10 @@ class XiaomiThermometerDevice extends Device {
 
     try {
       const advertisement = await this.homey.ble.find(uuid);
+      if (await this.shouldSkipActiveConnection(advertisement)) {
+        return;
+      }
+
       const peripheral = await advertisement.connect();
       this.log(`Connected to device: ${uuid}`);
 

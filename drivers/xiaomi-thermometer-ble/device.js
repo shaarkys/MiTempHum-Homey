@@ -30,6 +30,85 @@ class MyDevice extends Device {
 
     // Get the initial temperature offset setting
     this.temperatureOffset = this.getSetting("temperature_offset") || 0;
+    this.advertisementSubscriptionActive = false;
+    await this.startAdvertisementSubscription();
+  }
+
+  getPeripheralUuid() {
+    const store = typeof this.getStore === "function" ? this.getStore() : {};
+    const storePeripheralUuid = store && typeof store.peripheralUuid === "string" ? store.peripheralUuid : "";
+    if (storePeripheralUuid) {
+      return storePeripheralUuid.toLowerCase().replace(/:/g, "");
+    }
+
+    const data = this.getData() || {};
+    const legacyId = typeof data.id === "string" ? data.id : "";
+    return legacyId.toLowerCase().replace(/:/g, "");
+  }
+
+  supportsAdvertisementSubscriptions() {
+    return Boolean(
+      typeof this.homey.hasFeature === "function"
+      && this.homey.hasFeature("ble-advertisements")
+      && this.homey.ble
+      && typeof this.homey.ble.subscribeToAdvertisements === "function"
+      && typeof this.homey.ble.unsubscribeFromAdvertisements === "function",
+    );
+  }
+
+  isUsingAdvertisementSubscription() {
+    return this.advertisementSubscriptionActive === true;
+  }
+
+  async startAdvertisementSubscription() {
+    if (!this.supportsAdvertisementSubscriptions()) {
+      this.log("BLE advertisement subscriptions are not available; using discovery polling fallback.");
+      return;
+    }
+
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      this.log("Missing peripheral UUID; using discovery polling fallback.");
+      return;
+    }
+
+    try {
+      await this.homey.ble.subscribeToAdvertisements(
+        peripheralUuid,
+        { rateLimitMs: 5000 },
+        (advertisement) => {
+          this.updateTag(advertisement).catch((error) => this.error("Error processing advertisement:", error));
+        },
+      );
+      this.advertisementSubscriptionActive = true;
+      this.log(`Subscribed to BLE advertisements for ${peripheralUuid}`);
+      if (this.driver && typeof this.driver.managePolling === "function") {
+        this.driver.managePolling();
+      }
+    } catch (error) {
+      this.advertisementSubscriptionActive = false;
+      this.log(`Could not subscribe to BLE advertisements, using polling fallback: ${error.message || error}`);
+    }
+  }
+
+  async stopAdvertisementSubscription() {
+    if (!this.advertisementSubscriptionActive || !this.supportsAdvertisementSubscriptions()) {
+      return;
+    }
+
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      return;
+    }
+
+    try {
+      await this.homey.ble.unsubscribeFromAdvertisements(peripheralUuid);
+      this.log(`Unsubscribed from BLE advertisements for ${peripheralUuid}`);
+    } catch (error) {
+      this.log(`Failed to unsubscribe from BLE advertisements: ${error.message || error}`);
+    } finally {
+      this.advertisementSubscriptionActive = false;
+    }
   }
 
   /**
@@ -70,13 +149,16 @@ class MyDevice extends Device {
    */
   async onDeleted() {
     this.log("Xiaomi ATC BLE has been deleted");
+    await this.stopAdvertisementSubscription();
+  }
+
+  async onUninit() {
+    await this.stopAdvertisementSubscription();
   }
 
   async updateTag(foundDevices) {
     try {
       this.log(`Updating measurements ${this.getName()}`);
-      let deviceData = this.getData();
-      let settings = this.getSettings();
       let mac = this.getData();
 
       // Add safeguard check if device is still available
@@ -85,7 +167,8 @@ class MyDevice extends Device {
         return;
       }
 
-      foundDevices.forEach((device) => {
+      const advertisements = Array.isArray(foundDevices) ? foundDevices : [foundDevices];
+      advertisements.forEach((device) => {
         if (device.address === mac["id"]) {
           this.log("Match!", mac, device.address);
           //this.log("Service Data:", device.serviceData);

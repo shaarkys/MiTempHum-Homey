@@ -26,10 +26,14 @@ class MyDriver extends Driver {
   }
 
   managePolling() {
-    const devices = this.getDevices();
+    const devices = this.getDevices()
+      .filter((device) => !device.isUsingAdvertisementSubscription || !device.isUsingAdvertisementSubscription());
     if (devices.length > 0 && !this.polling) {
       this.polling = true;
-      this.addListener("poll", this.pollDevice.bind(this));
+      if (!this.pollListener) {
+        this.pollListener = this.pollDevice.bind(this);
+        this.addListener("poll", this.pollListener);
+      }
       this.emit("poll");
       this.log("Started polling BLE ATC devices.");
     } else if (devices.length === 0 && this.polling) {
@@ -68,6 +72,10 @@ class MyDriver extends Driver {
                 let new_device = {
                   name: device.localName,
                   data: { id: device.address },
+                  store: {
+                    peripheralUuid: device.uuid || device.address,
+                    address: device.address,
+                  },
                 };
                 devices.push(new_device);
                 this.log(`Device added for pairing: ${device.localName}, address: ${device.address}`);
@@ -93,7 +101,14 @@ class MyDriver extends Driver {
       let polling_interval = this.homey.settings.get("polling_interval") || 30;
       let scan_duration = this.homey.settings.get("scan_duration") || 20;
 
-      let devices = this.getDevices();
+      let devices = this.getDevices()
+        .filter((device) => !device.isUsingAdvertisementSubscription || !device.isUsingAdvertisementSubscription());
+
+      if (devices.length === 0) {
+        this.polling = false;
+        this.log("All ATC BLE devices use advertisement subscriptions. Polling is disabled.");
+        return;
+      }
 
       try {
         const foundDevices = await this.homey.ble.discover([], scan_duration * 1000);
