@@ -139,5 +139,8 @@
   },
   "1.2.42": {
     "en": "Added BLE advertisement subscriptions and a low-RSSI guard that avoids active BLE connections below -85 dBm."
+  },
+  "1.2.43": {
+    "en": "Fixed Zigbee firmware migration routing for LYWSD03MMC sensors running devbis 1.0.6 or 1.1.0."
   }
 }

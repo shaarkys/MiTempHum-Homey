@@ -5,7 +5,7 @@
   "bugs": {
     "url": "https://github.com/shaarkys/MiTempHum-Homey/issues"
   },
-  "version": "1.2.42",
+  "version": "1.2.43",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "platforms": [
@@ -915,68 +915,7 @@
             "en": "°C"
           }
         }
-      ],
-      "firmwareUpdates": {
-        "wakeInstruction": {
-          "en": "Remove and reinsert the battery to wake the sensor."
-        },
-        "updates": [
-          {
-            "changelog": {
-              "en": "Migrates devbis z03mmc firmware 1.0.6 or 1.1.0 directly to pvvx ZigbeeTLc 3001-0138."
-            },
-            "device": {
-              "manufacturerName": "Xiaomi",
-              "productId": [
-                "LYWSD03MMC"
-              ]
-            },
-            "files": [
-              {
-                "fileVersion": 2040082433,
-                "imageType": 515,
-                "manufacturerCode": 4417,
-                "minFileVersion": 268840961,
-                "maxFileVersion": 268840961,
-                "size": 134210,
-                "name": "1141-0203-79993001-Z03MMC_v0138.zigbee",
-                "integrity": "sha512:b93ff920b9a7c59f9656f7b7b13b48cadd3c57cd436cabc2fef3a42bb34c3110d9a4751918aacea50044646bc614813228e51a3015ec50fa2bb3d098467106df"
-              },
-              {
-                "fileVersion": 2040082433,
-                "imageType": 515,
-                "manufacturerCode": 56085,
-                "minFileVersion": 285224961,
-                "maxFileVersion": 285224961,
-                "size": 134210,
-                "name": "db15-0203-79993001-Z03MMC_v0138.zigbee",
-                "integrity": "sha512:4ef49f822f48e9c5114dcff7df3f3d877826480e64edfb4302e91d459186cf2c4aff6c02c1c3ffc04ea6c5a97073d7e4390226731928ae3e6c1961ae60a20c4a"
-              }
-            ]
-          },
-          {
-            "changelog": {
-              "en": "Updates pvvx ZigbeeTLc firmware to 3001-0138."
-            },
-            "device": {
-              "manufacturerName": "Xiaomi",
-              "productId": [
-                "LYWSD03MMC-z"
-              ]
-            },
-            "files": [
-              {
-                "fileVersion": 20459521,
-                "imageType": 522,
-                "manufacturerCode": 4417,
-                "size": 134210,
-                "name": "1141-020a-01383001-Z03MMC.zigbee",
-                "integrity": "sha512:37f64674665fd73f043cc8a81aff1fdaaed296ff73470018d56071753753063055eda5abf6af5262696d38e034c0fdb744e987c8a59c3db43689520b0d88590f"
-              }
-            ]
-          }
-        ]
-      }
+      ]
     }
   ],
   "capabilities": {
