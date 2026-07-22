@@ -5,7 +5,7 @@
   "updates": [
     {
       "changelog": {
-        "en": "Migrates legacy devbis z03mmc firmware through version 1.1.0 to pvvx ZigbeeTLc 3001-0138."
+        "en": "Migrates devbis z03mmc firmware 1.0.6 or 1.1.0 directly to pvvx ZigbeeTLc 3001-0138."
       },
       "device": {
         "manufacturerName": "Xiaomi",
@@ -15,17 +15,21 @@
       },
       "files": [
         {
-          "fileVersion": 285224961,
+          "fileVersion": 2040082433,
           "imageType": 515,
           "manufacturerCode": 4417,
-          "size": 131362,
-          "name": "1141-0203-11003001-z03mmc.zigbee",
-          "integrity": "sha512:d0ff5ed064be67820f5528d40f1b95ea93650ad0ff9d831fd51dae049544134fa7d5bcf43fb53b889cb1f986fa8562c844e6ddf62333b96368c0376322f18681"
+          "minFileVersion": 268840961,
+          "maxFileVersion": 268840961,
+          "size": 134210,
+          "name": "1141-0203-79993001-Z03MMC_v0138.zigbee",
+          "integrity": "sha512:b93ff920b9a7c59f9656f7b7b13b48cadd3c57cd436cabc2fef3a42bb34c3110d9a4751918aacea50044646bc614813228e51a3015ec50fa2bb3d098467106df"
         },
         {
           "fileVersion": 2040082433,
           "imageType": 515,
           "manufacturerCode": 56085,
+          "minFileVersion": 285224961,
+          "maxFileVersion": 285224961,
           "size": 134210,
           "name": "db15-0203-79993001-Z03MMC_v0138.zigbee",
           "integrity": "sha512:4ef49f822f48e9c5114dcff7df3f3d877826480e64edfb4302e91d459186cf2c4aff6c02c1c3ffc04ea6c5a97073d7e4390226731928ae3e6c1961ae60a20c4a"
