@@ -142,5 +142,8 @@
   },
   "1.2.43": {
     "en": "Fixed Zigbee firmware migration routing for LYWSD03MMC sensors running devbis 1.0.6 or 1.1.0."
+  },
+  "1.2.44": {
+    "en": "Fix LYWSD03MMC firmware migration routing"
   }
 }
