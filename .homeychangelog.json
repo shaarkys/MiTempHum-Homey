@@ -145,5 +145,8 @@
   },
   "1.2.44": {
     "en": "Fix LYWSD03MMC firmware migration routing"
+  },
+  "1.2.46": {
+    "en": "Added Test support for Qingping CGD1 alarm clocks"
   }
 }
