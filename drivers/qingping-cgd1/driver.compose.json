@@ -1,0 +1,52 @@
+{
+  "name": {
+    "en": "Qingping CGD1 Alarm Clock (BLE)",
+    "nl": "Qingping CGD1 Alarm Clock (BLE)",
+    "da": "Qingping CGD1 Alarm Clock (BLE)",
+    "de": "Qingping CGD1 Alarm Clock (BLE)",
+    "es": "Qingping CGD1 Alarm Clock (BLE)",
+    "fr": "Qingping CGD1 Alarm Clock (BLE)",
+    "it": "Qingping CGD1 Alarm Clock (BLE)",
+    "no": "Qingping CGD1 Alarm Clock (BLE)",
+    "sv": "Qingping CGD1 Alarm Clock (BLE)",
+    "pl": "Qingping CGD1 Alarm Clock (BLE)",
+    "ru": "Qingping CGD1 Alarm Clock (BLE)",
+    "ko": "Qingping CGD1 Alarm Clock (BLE)"
+  },
+  "class": "sensor",
+  "capabilities": [
+    "measure_temperature",
+    "measure_humidity",
+    "measure_battery",
+    "measure_rssi"
+  ],
+  "platforms": [
+    "local"
+  ],
+  "connectivity": [
+    "ble"
+  ],
+  "images": {
+    "small": "{{driverAssetsPath}}/images/small.png",
+    "large": "{{driverAssetsPath}}/images/large.png"
+  },
+  "energy": {
+    "batteries": [
+      "AA",
+      "AA"
+    ]
+  },
+  "pair": [
+    {
+      "id": "list_devices",
+      "template": "list_devices",
+      "navigation": {
+        "next": "add_devices"
+      }
+    },
+    {
+      "id": "add_devices",
+      "template": "add_devices"
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="960"
+   height="960"
+   viewBox="0 0 960 960"
+   role="img"
+   aria-labelledby="title description"
+   version="1.1"
+   id="svg19"
+   sodipodi:docname="icon.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs19">
+    <inkscape:path-effect
+       effect="powerstroke"
+       id="path-effect22"
+       is_visible="true"
+       lpeversion="1.3"
+       scale_width="1"
+       interpolator_type="CubicBezierJohan"
+       interpolator_beta="0.2"
+       start_linecap_type="zerowidth"
+       end_linecap_type="zerowidth"
+       offset_points="0.037992994,9.3535899"
+       linejoin_type="extrp_arc"
+       miter_limit="4"
+       not_jump="false"
+       sort_points="true"
+       message="&lt;b&gt;Ctrl + click&lt;/b&gt; on existing node and move it" />
+    <inkscape:path-effect
+       effect="bspline"
+       id="path-effect21"
+       is_visible="true"
+       lpeversion="1.3"
+       weight="33.333333"
+       steps="2"
+       helper_size="0"
+       apply_no_weight="true"
+       apply_with_weight="true"
+       only_selected="false"
+       uniform="false" />
+    <inkscape:path-effect
+       effect="fill_between_many"
+       method="bsplinespiro"
+       autoreverse="false"
+       close="false"
+       join="false"
+       linkedpaths="#path21,0,1"
+       id="path-effect23" />
+  </defs>
+  <sodipodi:namedview
+     id="namedview19"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.221875"
+     inkscape:cx="479.59079"
+     inkscape:cy="480"
+     inkscape:window-width="3440"
+     inkscape:window-height="1369"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg19" />
+  <title
+     id="title">Qingping CGD1 alarm clock</title>
+  <desc
+     id="description">Three-quarter line drawing of a rounded Bluetooth alarm clock with temperature and humidity display.</desc>
+  <path
+     stroke-width="28"
+     d="m 173.52175,83.079279 c 33.10528,-3.727083 16.67917,-1.918176 32.69604,-3.16515 26.31906,-2.049038 45.21587,-1.300221 108.11708,0.437417 C 387.75488,82.379765 642.4417,91.95845 706.35806,98.265985 789.35806,106.26598 865,191 861,273 l -19,400 c -4,79 -11.35294,150.00512 -87.35294,175.00512 l -113.09719,8.53964"
+     id="path1"
+     style="fill:none;stroke:#000000;stroke-linecap:round;stroke-linejoin:round"
+     sodipodi:nodetypes="cssccccc" />
+  <path
+     stroke-width="30"
+     d="M 178,151 C 115,159 74,204 70,267 L 48,678 c -4,75 43,128 117,135 l 474,42 c 76,7 130,-39 134,-116 L 796,301 C 800,229 754,179 683,172 519,155 343,145 178,151 Z"
+     id="path4"
+     style="fill:none;stroke:#000000;stroke-linecap:round;stroke-linejoin:round" />
+  <path
+     stroke-width="22"
+     d="m 206,220 c -43,5 -72,38 -74,83 l -17,326 c -3,52 30,88 82,93 l 399,34 c 53,5 90,-28 93,-81 L 707,330 C 709,281 678,247 630,242 491,226 345,217 206,220 Z"
+     id="path5"
+     style="fill:none;stroke:#000000;stroke-linecap:round;stroke-linejoin:round" />
+  <path
+     stroke-width="14"
+     d="m 135.5422,324.72634 563.6445,32.81842 M 123.90793,602.63683 676,644"
+     id="path6"
+     style="fill:none;stroke:#000000;stroke-linecap:round;stroke-linejoin:round"
+     sodipodi:nodetypes="cccc" />
+  <path
+     stroke-width="24"
+     d="m 164,813 5,36 c 2,16 15,28 31,29 l 420,34 c 18,2 34,-8 40,-25 l 11,-33"
+     id="path18"
+     style="fill:none;stroke:#000000;stroke-linecap:round;stroke-linejoin:round" />
+  <circle
+     id="path20"
+     style="fill:#000000;stroke:#000000"
+     cx="82.659843"
+     cy="207.87724"
+     r="8.2402763" />
+</svg>

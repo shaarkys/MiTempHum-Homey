@@ -1,0 +1,84 @@
+[
+  {
+    "id": "temperature_offset",
+    "type": "number",
+    "label": {
+      "en": "Temperature Offset",
+      "nl": "Temperatuur Offset",
+      "da": "Temperaturoffset",
+      "de": "Temperaturversatz",
+      "es": "Compensación de Temperatura",
+      "fr": "Décalage de Température",
+      "it": "Offset di Temperatura",
+      "no": "Temperaturoffset",
+      "sv": "Temperaturförskjutning",
+      "pl": "Przesunięcie Temperatury",
+      "ru": "Смещение Температуры",
+      "ko": "온도 보정값"
+    },
+    "value": 0,
+    "min": -5,
+    "max": 5,
+    "hint": {
+      "en": "Offset applied to CGD1 temperature readings.",
+      "nl": "Offset toegepast op CGD1-temperatuurmetingen.",
+      "da": "Offset anvendt på CGD1-temperaturmålinger.",
+      "de": "Auf CGD1-Temperaturmessungen angewendeter Versatz.",
+      "es": "Compensación aplicada a las lecturas de temperatura del CGD1.",
+      "fr": "Décalage appliqué aux relevés de température du CGD1.",
+      "it": "Offset applicato alle letture di temperatura CGD1.",
+      "no": "Offset brukt på CGD1-temperaturmålinger.",
+      "sv": "Förskjutning som tillämpas på CGD1-temperaturmätningar.",
+      "pl": "Przesunięcie stosowane do odczytów temperatury CGD1.",
+      "ru": "Смещение для показаний температуры CGD1.",
+      "ko": "CGD1 온도 측정값에 적용할 보정값입니다."
+    },
+    "units": {
+      "en": "°C",
+      "nl": "°C",
+      "da": "°C",
+      "de": "°C",
+      "es": "°C",
+      "fr": "°C",
+      "it": "°C",
+      "no": "°C",
+      "sv": "°C",
+      "pl": "°C",
+      "ru": "°C",
+      "ko": "°C"
+    }
+  },
+  {
+    "id": "bindkey",
+    "type": "text",
+    "label": {
+      "en": "BLE Bindkey",
+      "nl": "BLE-bindkey",
+      "da": "BLE-bindkey",
+      "de": "BLE-Bindkey",
+      "es": "Clave BLE",
+      "fr": "Clé BLE",
+      "it": "Chiave BLE",
+      "no": "BLE-bindkey",
+      "sv": "BLE-bindkey",
+      "pl": "Klucz BLE",
+      "ru": "BLE-ключ",
+      "ko": "BLE 바인드키"
+    },
+    "value": "",
+    "hint": {
+      "en": "Optional 32-character key for encrypted Xiaomi MiBeacon advertisements. Try without it first; unencrypted Qingping advertisements do not need a key.",
+      "nl": "Optionele sleutel van 32 tekens voor versleutelde Xiaomi MiBeacon-advertenties. Probeer het eerst zonder sleutel; niet-versleutelde Qingping-advertenties hebben geen sleutel nodig.",
+      "da": "Valgfri nøgle på 32 tegn til krypterede Xiaomi MiBeacon-annoncer. Prøv først uden; ukrypterede Qingping-annoncer kræver ingen nøgle.",
+      "de": "Optionaler 32-stelliger Schlüssel für verschlüsselte Xiaomi-MiBeacon-Werbedaten. Zuerst ohne Schlüssel testen; unverschlüsselte Qingping-Werbedaten benötigen keinen Schlüssel.",
+      "es": "Clave opcional de 32 caracteres para anuncios Xiaomi MiBeacon cifrados. Pruébelo primero sin ella; los anuncios Qingping sin cifrar no necesitan clave.",
+      "fr": "Clé facultative de 32 caractères pour les annonces Xiaomi MiBeacon chiffrées. Essayez d'abord sans clé; les annonces Qingping non chiffrées n'en ont pas besoin.",
+      "it": "Chiave opzionale di 32 caratteri per annunci Xiaomi MiBeacon crittografati. Provare prima senza; gli annunci Qingping non crittografati non richiedono una chiave.",
+      "no": "Valgfri nøkkel på 32 tegn for krypterte Xiaomi MiBeacon-annonser. Prøv først uten; ukrypterte Qingping-annonser trenger ingen nøkkel.",
+      "sv": "Valfri nyckel med 32 tecken för krypterade Xiaomi MiBeacon-annonser. Prova först utan; okrypterade Qingping-annonser behöver ingen nyckel.",
+      "pl": "Opcjonalny 32-znakowy klucz do zaszyfrowanych reklam Xiaomi MiBeacon. Najpierw spróbuj bez niego; nieszyfrowane reklamy Qingping nie wymagają klucza.",
+      "ru": "Необязательный 32-значный ключ для зашифрованных объявлений Xiaomi MiBeacon. Сначала попробуйте без него; незашифрованным объявлениям Qingping ключ не нужен.",
+      "ko": "암호화된 Xiaomi MiBeacon 광고용 32자 선택 키입니다. 먼저 키 없이 시도하세요. 암호화되지 않은 Qingping 광고에는 키가 필요하지 않습니다."
+    }
+  }
+]
