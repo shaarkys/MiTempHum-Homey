@@ -148,5 +148,8 @@
   },
   "1.2.46": {
     "en": "Added Test support for Qingping CGD1 alarm clocks"
+  },
+  "1.2.47": {
+    "en": "Reduced CGD1 BLE log noise and redundant updates, stabilized battery reporting, and improved LYWSD02MMC UUID lookup diagnostics."
   }
 }
