@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
 const fs = require("node:fs");
+const Module = require("node:module");
 const path = require("node:path");
 const test = require("node:test");
 
@@ -101,6 +102,68 @@ test("prefers unencrypted Qingping service data when both formats are present", 
 
   assert.equal(parsed.format, "qingping");
   assert.equal(parsed.values.battery, 37);
+});
+
+test("prefers a complete captured FDCD frame over encrypted FE95 without a bindkey", () => {
+  const mac = "02:00:00:12:34:56";
+  const parsed = parseCgd1Advertisement({
+    address: mac,
+    serviceData: [
+      {
+        uuid: "0000fe95-0000-1000-8000-00805f9b34fb",
+        data: Buffer.from("585876052c563412000002eb0d197d69ef73e86b1ae58e010000a39228c4", "hex"),
+      },
+      {
+        uuid: "0000fdcd-0000-1000-8000-00805f9b34fb",
+        data: Buffer.from("080c563412000002010422010d02020126", "hex"),
+      },
+    ],
+  });
+
+  assert.equal(parsed.format, "qingping");
+  assert.deepEqual(parsed.values, {
+    temperature: 29,
+    humidity: 52.5,
+    battery: 38,
+  });
+});
+
+test("changing a valid bindkey retains an existing warning until valid sensor data arrives", async () => {
+  const devicePath = require.resolve("../drivers/qingping-cgd1/device");
+  const originalModuleLoad = Module._load;
+  let QingpingCgd1Device;
+
+  try {
+    Module._load = function load(request, parent, isMain) {
+      if (request === "homey") {
+        return { Device: class StubDevice {} };
+      }
+      return originalModuleLoad.call(this, request, parent, isMain);
+    };
+    QingpingCgd1Device = require(devicePath);
+  } finally {
+    Module._load = originalModuleLoad;
+    delete require.cache[devicePath];
+  }
+
+  const warningCalls = [];
+  let pollCalled = false;
+  const device = Object.create(QingpingCgd1Device.prototype);
+  device.warningState = "Encrypted CGD1 data requires a bindkey.";
+  device.setWarning = async (value) => warningCalls.push(value);
+  device.pollAdvertisement = async () => {
+    pollCalled = true;
+  };
+
+  await device.onSettings({
+    newSettings: { bindkey: "00112233445566778899aabbccddeeff" },
+    changedKeys: ["bindkey"],
+  });
+
+  assert.equal(pollCalled, true);
+  assert.equal(device.bindkey.toString("hex"), "00112233445566778899aabbccddeeff");
+  assert.deepEqual(warningCalls, []);
+  assert.equal(device.warningState, "Encrypted CGD1 data requires a bindkey.");
 });
 
 test("generated app manifest exposes the CGD1 driver and optional bindkey", () => {

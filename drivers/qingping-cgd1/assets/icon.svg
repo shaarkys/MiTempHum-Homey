@@ -61,9 +61,9 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="1.221875"
-     inkscape:cx="479.59079"
-     inkscape:cy="480"
+     inkscape:zoom="0.8639961"
+     inkscape:cx="930.55976"
+     inkscape:cy="309.60788"
      inkscape:window-width="3440"
      inkscape:window-height="1369"
      inkscape:window-x="-8"
@@ -76,10 +76,10 @@
      id="description">Three-quarter line drawing of a rounded Bluetooth alarm clock with temperature and humidity display.</desc>
   <path
      stroke-width="28"
-     d="m 173.52175,83.079279 c 33.10528,-3.727083 16.67917,-1.918176 32.69604,-3.16515 26.31906,-2.049038 45.21587,-1.300221 108.11708,0.437417 C 387.75488,82.379765 642.4417,91.95845 706.35806,98.265985 789.35806,106.26598 865,191 861,273 l -19,400 c -4,79 -11.35294,150.00512 -87.35294,175.00512 l -113.09719,8.53964"
+     d="m 208.82284,80.185747 c 33.10528,-3.727083 33.99338,-1.508999 51.00109,-1.499239 18.17878,0.01043 36.34534,0.972583 54.51094,1.665038 C 445.0507,85.334307 642.4417,91.95845 706.35806,98.265985 789.35806,106.26598 865,191 861,273 l -19,400 c -4,79 -11.35294,150.00512 -87.35294,175.00512 l -113.09719,8.53964"
      id="path1"
      style="fill:none;stroke:#000000;stroke-linecap:round;stroke-linejoin:round"
-     sodipodi:nodetypes="cssccccc" />
+     sodipodi:nodetypes="caaccccc" />
   <path
      stroke-width="30"
      d="M 178,151 C 115,159 74,204 70,267 L 48,678 c -4,75 43,128 117,135 l 474,42 c 76,7 130,-39 134,-116 L 796,301 C 800,229 754,179 683,172 519,155 343,145 178,151 Z"
@@ -107,4 +107,9 @@
      cx="82.659843"
      cy="207.87724"
      r="8.2402763" />
+  <path
+     style="fill:#000000;stroke:#000000;stroke-width:30;stroke-linecap:round;stroke-miterlimit:11.7;stroke-dasharray:none;paint-order:markers stroke fill"
+     d="M 89.82135,203.68317 C 117.39039,156.12886 150.06326,113.72523 208.08748,81.379277"
+     id="path7"
+     sodipodi:nodetypes="cc" />
 </svg>

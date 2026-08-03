@@ -275,20 +275,25 @@ class LYWSD02MMC_device extends Device {
     const expandedLookupUuid = expandBleUuid(characteristicUuid);
 
     try {
-      this.log(`Attempting direct characteristic lookup on ${service.uuid}: ${characteristicUuid} -> ${shortLookupUuid}`);
-      const characteristic = await service.getCharacteristic(shortLookupUuid);
+      this.log(`Attempting direct characteristic lookup on ${service.uuid}: ${characteristicUuid} -> ${expandedLookupUuid}`);
+      const characteristic = await service.getCharacteristic(expandedLookupUuid);
       this.log(`Direct characteristic lookup succeeded: ${characteristic.uuid}`);
       return characteristic;
-    } catch (error) {
-      this.logErrorDetails(`Direct characteristic lookup failed using ${shortLookupUuid}`, error);
+    } catch (expandedError) {
       if (shortLookupUuid === expandedLookupUuid) {
-        throw error;
+        this.logErrorDetails(`Direct characteristic lookup failed using ${expandedLookupUuid}`, expandedError);
+        throw expandedError;
       }
 
-      this.log(`Retrying direct characteristic lookup on ${service.uuid}: ${characteristicUuid} -> ${expandedLookupUuid}`);
-      const characteristic = await service.getCharacteristic(expandedLookupUuid);
-      this.log(`Direct characteristic lookup succeeded on retry: ${characteristic.uuid}`);
-      return characteristic;
+      this.log(`Full characteristic UUID lookup failed; retrying legacy short UUID ${shortLookupUuid}`);
+      try {
+        const characteristic = await service.getCharacteristic(shortLookupUuid);
+        this.log(`Direct characteristic lookup succeeded on retry: ${characteristic.uuid}`);
+        return characteristic;
+      } catch (shortError) {
+        this.logErrorDetails(`Direct characteristic lookup failed using ${shortLookupUuid}`, shortError);
+        throw shortError;
+      }
     }
   }
 

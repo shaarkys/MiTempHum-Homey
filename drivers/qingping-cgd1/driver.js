@@ -3,7 +3,6 @@
 const { Driver } = require("homey");
 const {
   parseCgd1Advertisement,
-  toBuffer,
 } = require("../../lib/cgd1-advertisement");
 
 const DISCOVERY_SCAN_MS = 20000;
@@ -11,16 +10,6 @@ const DISCOVERY_SCAN_MS = 20000;
 class QingpingCgd1Driver extends Driver {
   async onInit() {
     this.log("Qingping CGD1 BLE driver initialized");
-  }
-
-  formatServiceData(advertisement) {
-    const serviceData = Array.isArray(advertisement && advertisement.serviceData)
-      ? advertisement.serviceData
-      : [];
-    return serviceData.map((entry) => {
-      const data = toBuffer(entry && entry.data);
-      return `${entry && entry.uuid ? entry.uuid : "unknown"}:${data ? data.toString("hex") : "invalid"}`;
-    }).join(", ") || "none";
   }
 
   async onPairListDevices() {
@@ -32,11 +21,7 @@ class QingpingCgd1Driver extends Driver {
       const parsed = parseCgd1Advertisement(advertisement);
       if (!parsed) continue;
 
-      this.log(
-        `CGD1 advertisement - address: ${advertisement.address || "unknown"}, `
-        + `uuid: ${advertisement.uuid || "unknown"}, rssi: ${advertisement.rssi}, `
-        + `serviceData: ${this.formatServiceData(advertisement)}`,
-      );
+      this.log(`CGD1 ${parsed.format} candidate (RSSI ${advertisement.rssi ?? "unknown"} dBm)`);
 
       const deviceId = advertisement.uuid || advertisement.address;
       if (!deviceId || devicesById.has(deviceId)) continue;
