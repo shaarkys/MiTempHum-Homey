@@ -85,6 +85,16 @@ test("reports when encrypted CGD1 data needs a bindkey", () => {
   assert.deepEqual(parsed.values, {});
 });
 
+test("keeps the CGD1 MiBeacon wrapper strict to the CGD1 product ID", () => {
+  const parsed = parseMiBeaconServiceData(
+    "48590312a41b776e7c96add7000000f2bf545b",
+    "2C:11:65:25:70:04",
+    Buffer.from("b2cf9a553d53571b5657defd582d676e", "hex"),
+  );
+
+  assert.equal(parsed, null);
+});
+
 test("prefers unencrypted Qingping service data when both formats are present", () => {
   const parsed = parseCgd1Advertisement({
     address: "58:2D:34:52:65:BF",

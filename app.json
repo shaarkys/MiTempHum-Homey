@@ -1114,6 +1114,76 @@
           }
         ]
       }
+    },
+    {
+      "name": {
+        "en": "Xiaomi XMWSDJ04MMC (BLE)"
+      },
+      "class": "sensor",
+      "capabilities": [
+        "measure_temperature",
+        "measure_humidity",
+        "measure_battery",
+        "measure_rssi"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "ble"
+      ],
+      "images": {
+        "small": "/drivers/xiaomi-xmwsdj04mmc/assets/images/small.png",
+        "large": "/drivers/xiaomi-xmwsdj04mmc/assets/images/large.png"
+      },
+      "energy": {
+        "batteries": [
+          "CR2450"
+        ]
+      },
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "id": "xiaomi-xmwsdj04mmc",
+      "settings": [
+        {
+          "id": "temperature_offset",
+          "type": "number",
+          "label": {
+            "en": "Temperature Offset"
+          },
+          "value": 0,
+          "min": -5,
+          "max": 5,
+          "hint": {
+            "en": "Offset applied to XMWSDJ04MMC temperature readings."
+          },
+          "units": {
+            "en": "°C"
+          }
+        },
+        {
+          "id": "bindkey",
+          "type": "text",
+          "label": {
+            "en": "BLE Bindkey"
+          },
+          "value": "",
+          "hint": {
+            "en": "A 32-character hexadecimal BLE bindkey is required to decrypt stock-firmware encrypted MiBeacon measurements. It can remain empty for pairing, but measurements cannot be decrypted until it is entered."
+          }
+        }
+      ]
     }
   ],
   "capabilities": {
