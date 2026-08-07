@@ -27,6 +27,7 @@ class XiaomiXmwsdj04mmcDevice extends Device {
     this.advertisementSubscriptionActive = false;
     this.advertisementQueue = Promise.resolve();
     this.firstSuccessfulAdvertisementLogged = false;
+    this.bindkeyDecryptionLogged = false;
     this.warningState = undefined;
     this.lastBatteryWriteAt = null;
     this.capabilityWriteErrorStates = new Map();
@@ -246,6 +247,11 @@ class XiaomiXmwsdj04mmcDevice extends Device {
       }
       await this.setWarningState(message);
       return;
+    }
+
+    if (parsed.encrypted && !this.bindkeyDecryptionLogged) {
+      this.bindkeyDecryptionLogged = true;
+      this.log("XMWSDJ04MMC frame decrypted using configured bindkey");
     }
 
     const { temperature, humidity, battery } = parsed.values;
