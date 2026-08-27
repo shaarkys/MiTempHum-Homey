@@ -3,6 +3,7 @@
 const { Device } = require("homey");
 const ADVERTISEMENT_RATE_LIMIT_MS = 5000;
 const MIN_CONNECTABLE_RSSI = -85;
+const GATT_SETUP_TIMEOUT_MS = 30000;
 
 class XiaomiThermometerDevice extends Device {
   /**
@@ -43,14 +44,21 @@ class XiaomiThermometerDevice extends Device {
     this.temperatureOffset = this.getSetting("temperature_offset") || 0;
     this.reconnectInterval = this.getSetting("reconnect_interval") || 300; // Default to 5 minutes
     this.advertisementSubscriptionActive = false;
+    this.subscriptionOperation = null;
+    this.gattAttemptId = 0;
+    this.gattAttemptCancellation = null;
+    this.gattSetupTimeout = null;
+    this.notificationCharacteristic = null;
+    this.peripheral = null;
+    this.disconnectTimeout = null;
+    this.lastAdvertisementMeasurementAt = null;
+    this.shuttingDown = false;
     this.log(`Reconnect interval is set to ${this.reconnectInterval} seconds.`);
 
     await this.startAdvertisementSubscription();
-    // Subscribe to BLE notifications
-    await this.subscribeToBLENotifications();
-
-    // Set up polling
-    this.addListener("poll", this.subscribeToBLENotifications.bind(this));
+    if (!this.advertisementSubscriptionActive) {
+      await this.subscribeToBLENotifications();
+    }
     this.pollDevice();
   }
 
@@ -145,6 +153,23 @@ class XiaomiThermometerDevice extends Device {
       return;
     }
 
+    let measurementData = null;
+    const serviceData = Array.isArray(advertisement.serviceData) ? advertisement.serviceData : [];
+    for (const entry of serviceData) {
+      if (!entry || !entry.data) {
+        continue;
+      }
+
+      const data = Buffer.isBuffer(entry.data) ? entry.data : Buffer.from(entry.data, "hex");
+      if (data.length === 5) {
+        measurementData = data;
+        this.lastAdvertisementMeasurementAt = Date.now();
+        // Invalidate in-flight GATT work before any capability write can yield.
+        this.cancelGattSetup("fresh passive advertisement received");
+        break;
+      }
+    }
+
     if (typeof advertisement.rssi === "number") {
       await this.setCapabilityValue("measure_rssi", advertisement.rssi).catch((error) => {
         this.error("Error setting 'measure_rssi' from advertisement:", error);
@@ -156,17 +181,10 @@ class XiaomiThermometerDevice extends Device {
       }
     }
 
-    const serviceData = Array.isArray(advertisement.serviceData) ? advertisement.serviceData : [];
-    serviceData.forEach((entry) => {
-      if (!entry || !entry.data) {
-        return;
-      }
-
-      const data = Buffer.isBuffer(entry.data) ? entry.data : Buffer.from(entry.data, "hex");
-      if (data.length === 5) {
-        this.updateTag(data).catch((error) => this.error("Error updating from advertisement:", error));
-      }
-    });
+    if (measurementData) {
+      await this.cleanupBLEConnection();
+      await this.updateTag(measurementData, { disconnectAfter: false });
+    }
   }
 
   async shouldSkipActiveConnection(advertisement) {
@@ -216,141 +234,287 @@ class XiaomiThermometerDevice extends Device {
    */
   async onDeleted() {
     this.log("Xiaomi LYWSD03MMC BLE (non ATC) has been deleted");
-    await this.stopAdvertisementSubscription();
-    await this.stopBLESubscription();
-    this.polling = false;
-    clearInterval(this.pollingInterval);
+    await this.shutdownBLE();
   }
 
   async onUninit() {
+    await this.shutdownBLE();
+  }
+
+  async shutdownBLE() {
+    this.shuttingDown = true;
+    const subscriptionOperation = this.subscriptionOperation;
+    if (this.pollingInterval) {
+      this.homey.clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
     await this.stopAdvertisementSubscription();
     await this.stopBLESubscription();
-    this.polling = false;
-    clearInterval(this.pollingInterval);
+    if (subscriptionOperation) {
+      await subscriptionOperation.catch((error) => {
+        this.log(`BLE setup operation ended during shutdown: ${error.message || error}`);
+      });
+    }
   }
 
   /**
    * Subscribe to BLE notifications
    */
   async subscribeToBLENotifications() {
-    this.log("Starting BLE for non ATC subscription");
-    const deviceData = this.getData();
-    const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
-    let lastTempHumidityData = null;
+    if (this.shuttingDown || this.hasRecentAdvertisementMeasurement()) {
+      return;
+    }
 
-    this.setWarning(null);
+    if (this.subscriptionOperation) {
+      return this.subscriptionOperation;
+    }
+
+    if (this.peripheral || this.notificationCharacteristic) {
+      this.log("BLE GATT fallback is already established; waiting for its owned disconnect timer.");
+      return;
+    }
+
+    const attemptId = ++this.gattAttemptId;
+    const operation = this.runGattSetup(attemptId);
+    this.subscriptionOperation = operation;
+    try {
+      await operation;
+    } finally {
+      if (this.subscriptionOperation === operation) {
+        this.subscriptionOperation = null;
+      }
+    }
+  }
+
+  async runGattSetup(attemptId) {
+    let cancelAttempt;
+    const cancellationPromise = new Promise((_, reject) => {
+      cancelAttempt = (reason) => {
+        const error = new Error(reason);
+        error.code = "BLE_GATT_SETUP_CANCELLED";
+        reject(error);
+      };
+    });
+    this.gattAttemptCancellation = { attemptId, cancel: cancelAttempt };
+
+    let setupTimeout;
+    const timeoutPromise = new Promise((_, reject) => {
+      setupTimeout = this.homey.setTimeout(() => {
+        if (this.gattAttemptId !== attemptId) {
+          return;
+        }
+        this.gattAttemptId += 1;
+        const error = new Error(`BLE GATT setup timed out after ${GATT_SETUP_TIMEOUT_MS / 1000} seconds`);
+        error.code = "BLE_GATT_SETUP_TIMEOUT";
+        reject(error);
+      }, GATT_SETUP_TIMEOUT_MS);
+    });
+    this.gattSetupTimeout = setupTimeout;
 
     try {
-      const advertisement = await this.homey.ble.find(uuid);
-      if (await this.shouldSkipActiveConnection(advertisement)) {
+      await Promise.race([
+        this.establishGattSubscription(attemptId),
+        cancellationPromise,
+        timeoutPromise,
+      ]);
+    } catch (error) {
+      if (error.code === "BLE_GATT_SETUP_CANCELLED") {
+        this.log(`BLE GATT setup cancelled: ${error.message}`);
+      } else {
+        this.log(`Failed to subscribe to notifications: ${error.message || error}`);
+        await this.setWarning(`${error}`).catch((warningError) => {
+          this.error("Error setting warning after subscription failure:", warningError);
+        });
+      }
+      await this.cleanupBLEConnection();
+    } finally {
+      if (this.gattSetupTimeout === setupTimeout) {
+        this.homey.clearTimeout(setupTimeout);
+        this.gattSetupTimeout = null;
+      }
+      if (this.gattAttemptCancellation && this.gattAttemptCancellation.attemptId === attemptId) {
+        this.gattAttemptCancellation = null;
+      }
+    }
+  }
+
+  async establishGattSubscription(attemptId) {
+    this.log("Starting BLE for non ATC subscription");
+    const uuid = this.getPeripheralUuid();
+    let lastTempHumidityData = null;
+
+    await this.setWarning(null).catch((error) => this.error("Error clearing warning before subscription:", error));
+    this.assertGattAttemptActive(attemptId);
+
+    const advertisement = await this.homey.ble.find(uuid);
+    this.assertGattAttemptActive(attemptId);
+    const skipActiveConnection = await this.shouldSkipActiveConnection(advertisement);
+    this.assertGattAttemptActive(attemptId);
+    if (skipActiveConnection) {
+      return;
+    }
+
+    const peripheral = await advertisement.connect();
+    if (!this.isGattAttemptActive(attemptId)) {
+      await peripheral.disconnect().catch((error) => {
+        this.log(`Failed to disconnect late BLE peripheral: ${error.message || error}`);
+      });
+      this.assertGattAttemptActive(attemptId);
+    }
+
+    this.peripheral = peripheral;
+    peripheral.once("disconnect", () => {
+      if (this.peripheral === peripheral) {
+        this.peripheral = null;
+        this.notificationCharacteristic = null;
+        if (this.disconnectTimeout) {
+          this.homey.clearTimeout(this.disconnectTimeout);
+          this.disconnectTimeout = null;
+        }
+        this.log(`Disconnected from device: ${uuid}`);
+      }
+    });
+    this.log(`Connected to device: ${uuid}`);
+
+    const rssi = advertisement.rssi;
+    this.log(`Device RSSI: ${rssi} dBm`);
+    if (!this.hasCapability("measure_rssi")) {
+      await this.addCapability("measure_rssi");
+      this.assertGattAttemptActive(attemptId);
+    }
+    await this.setCapabilityValue("measure_rssi", rssi).catch((error) => {
+      this.error("Error setting 'measure_rssi':", error);
+    });
+    this.assertGattAttemptActive(attemptId);
+
+    const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
+    this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
+    if (rssi < -80) {
+      await this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
+      this.assertGattAttemptActive(attemptId);
+    }
+
+    const temperatureHumidityServiceUuid = "ebe0ccb07a0a4b0c8a1a6ff2997da3a6";
+    const temperatureHumidityCharacteristicUuid = "ebe0ccc17a0a4b0c8a1a6ff2997da3a6";
+    const tempHumService = await peripheral.getService(temperatureHumidityServiceUuid);
+    this.assertGattAttemptActive(attemptId);
+    this.log(`Obtained service: ${temperatureHumidityServiceUuid}`);
+
+    const tempHumCharacteristic = await tempHumService.getCharacteristic(temperatureHumidityCharacteristicUuid);
+    this.assertGattAttemptActive(attemptId);
+    this.log(`Obtained characteristic: ${temperatureHumidityCharacteristicUuid}`);
+    this.notificationCharacteristic = tempHumCharacteristic;
+
+    await tempHumCharacteristic.subscribeToNotifications((data) => {
+      if (this.peripheral !== peripheral) {
         return;
       }
-
-      const peripheral = await advertisement.connect();
-      this.log(`Connected to device: ${uuid}`);
-
-      // Logging RSSI and checking signal strength
-      const rssi = advertisement.rssi;
-      this.log(`Device RSSI: ${rssi} dBm`);
-
-      // Ensure 'measure_rssi' capability exists
-      if (!this.hasCapability("measure_rssi")) {
-        await this.addCapability("measure_rssi");
+      const dataString = data.toString("hex");
+      if (lastTempHumidityData !== dataString) {
+        this.log("Received new notification temp/humidity: ", data);
+        this.updateTag(data).catch((error) => this.error("Error updating tag:", error));
+        lastTempHumidityData = dataString;
       }
+    });
+    this.assertGattAttemptActive(attemptId);
 
-      // Set the RSSI capability value
-      await this.setCapabilityValue("measure_rssi", rssi).catch(this.error);
+    this.log(`Subscribed to notifications for device: ${uuid}`);
+    await this.setWarning(null).catch((error) => this.error("Error clearing warning after subscription:", error));
+    this.assertGattAttemptActive(attemptId);
 
-      const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
-      this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
-
-      if (rssi < -80) {
-        await this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
-        setTimeout(() => this.setWarning(null), 15000);
+    this.log(`Disconnect timeout set for ${this.reconnectInterval} seconds.`);
+    this.disconnectTimeout = this.homey.setTimeout(async () => {
+      if (this.peripheral !== peripheral) {
+        return;
       }
+      this.log("Disconnect timeout reached. Initiating disconnect...");
+      await this.stopBLESubscription();
+    }, this.reconnectInterval * 1000);
+  }
 
-      // Use the correct UUIDs for the LYWSD03MMC device
-      const temperatureHumidityServiceUuid = "ebe0ccb07a0a4b0c8a1a6ff2997da3a6";
-      const temperatureHumidityCharacteristicUuid = "ebe0ccc17a0a4b0c8a1a6ff2997da3a6";
+  isGattAttemptActive(attemptId) {
+    return Boolean(
+      !this.shuttingDown
+      && this.gattAttemptId === attemptId
+      && !this.hasRecentAdvertisementMeasurement(),
+    );
+  }
 
-      const tempHumService = await peripheral.getService(temperatureHumidityServiceUuid);
-      this.log(`Obtained service: ${temperatureHumidityServiceUuid}`);
-
-      const tempHumCharacteristic = await tempHumService.getCharacteristic(temperatureHumidityCharacteristicUuid);
-      this.log(`Obtained characteristic: ${temperatureHumidityCharacteristicUuid}`);
-
-      // Subscribe to notifications with the callback
-      await tempHumCharacteristic.subscribeToNotifications((data) => {
-        const dataString = data.toString("hex");
-        if (lastTempHumidityData !== dataString) {
-          this.log("Received new notification temp/humidity: ", data);
-          this.updateTag(data);
-          lastTempHumidityData = dataString;
-        } else {
-          // Duplicate data received, ignoring.
-        }
-      });
-
-      this.log(`Subscribed to notifications for device: ${uuid}`);
-      this.setWarning(null);
-
-      // **Set a timeout to disconnect after reconnectInterval seconds**
-      this.log(`Disconnect timeout set for ${this.reconnectInterval} seconds.`);
-      this.disconnectTimeout = setTimeout(async () => {
-        this.log("Disconnect timeout reached. Initiating disconnect...");
-        await this.stopBLESubscription();
-      }, this.reconnectInterval * 1000);
-
-      // Handle peripheral disconnect
-      peripheral.once("disconnect", async () => {
-        clearTimeout(this.disconnectTimeout);
-        this.log(`Disconnected from device: ${uuid}`);
-        // Optionally, you can delay reconnection
-        // await this.delay(this.reconnectInterval);
-        // await this.subscribeToBLENotifications();
-      });
-
-      this.peripheral = peripheral; // Save the peripheral to unsubscribe later
-    } catch (error) {
-      this.log(`Failed to subscribe to notifications: ${error}`);
-      setTimeout(() => this.setWarning(null), 65000, await this.setWarning(`${error}`));
-      // Optionally, you can delay reconnection
-      // await this.delay(this.reconnectInterval);
-      // await this.subscribeToBLENotifications();
+  assertGattAttemptActive(attemptId) {
+    if (this.isGattAttemptActive(attemptId)) {
+      return;
     }
+
+    const error = new Error("BLE GATT setup is no longer current");
+    error.code = "BLE_GATT_SETUP_CANCELLED";
+    throw error;
+  }
+
+  cancelGattSetup(reason) {
+    const cancellation = this.gattAttemptCancellation;
+    if (!cancellation) {
+      return;
+    }
+
+    if (this.gattAttemptId === cancellation.attemptId) {
+      this.gattAttemptId += 1;
+    }
+    this.gattAttemptCancellation = null;
+    cancellation.cancel(reason);
+  }
+
+  hasRecentAdvertisementMeasurement() {
+    return Boolean(
+      this.advertisementSubscriptionActive
+      && this.lastAdvertisementMeasurementAt
+      && Date.now() - this.lastAdvertisementMeasurementAt < this.reconnectInterval * 1000,
+    );
   }
 
   /**
    * Stop BLE subscription
    */
   async stopBLESubscription() {
-    try {
-      if (this.peripheral) {
-        await this.unsubscribeFromBLENotifications(this.peripheral);
-      }
-      this.log("Stopped BLE subscription");
-    } catch (error) {
-      this.log("Error during unsubscribe:", error);
-    }
+    this.cancelGattSetup("BLE subscription stopped");
+    await this.cleanupBLEConnection();
+    this.log("Stopped BLE subscription");
   }
 
-  /**
-   * Unsubscribe from BLE notifications
-   */
-  async unsubscribeFromBLENotifications(peripheral) {
-    try {
-      await peripheral.disconnect();
-
-      this.log(`Disconnected from device: ${peripheral.id}`);
-    } catch (error) {
-      this.log(`Failed to disconnect: ${error}`);
+  async cleanupBLEConnection() {
+    if (this.disconnectTimeout) {
+      this.homey.clearTimeout(this.disconnectTimeout);
+      this.disconnectTimeout = null;
     }
+
+    const characteristic = this.notificationCharacteristic;
+    const peripheral = this.peripheral;
+    this.notificationCharacteristic = null;
+    this.peripheral = null;
+
+    if (characteristic) {
+      try {
+        await characteristic.unsubscribeFromNotifications();
+        this.log("Unsubscribed from BLE notifications");
+      } catch (error) {
+        this.log(`Failed to unsubscribe from BLE notifications: ${error.message || error}`);
+      }
+    }
+
+    if (peripheral) {
+      try {
+        await peripheral.disconnect();
+        this.log(`Disconnected from device: ${peripheral.id}`);
+      } catch (error) {
+        this.log(`Failed to disconnect: ${error.message || error}`);
+      }
+    }
+
   }
 
   /**
    * Update device with received data from BLE notifications
    */
-  async updateTag(data) {
+  async updateTag(data, { disconnectAfter = true } = {}) {
     this.log(`Updating measurements for ${this.getName()}`);
 
     const buffer = Buffer.from(data);
@@ -385,8 +549,9 @@ class XiaomiThermometerDevice extends Device {
     } else {
       this.log(`Ignoring battery reading: ${batteryPercentage}%`);
     }
-    // **Disconnect from the peripheral after processing the data**
-    await this.stopBLESubscription();
+    if (disconnectAfter) {
+      await this.stopBLESubscription();
+    }
   }
 
   /**
@@ -394,11 +559,17 @@ class XiaomiThermometerDevice extends Device {
    */
   pollDevice() {
     if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
+      this.homey.clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
     }
-    this.pollingInterval = setInterval(() => {
+    if (this.shuttingDown) {
+      return;
+    }
+    this.pollingInterval = this.homey.setInterval(() => {
       this.log("Polling device...");
-      this.subscribeToBLENotifications();
+      this.subscribeToBLENotifications().catch((error) => {
+        this.error("Unexpected BLE polling error:", error);
+      });
     }, this.reconnectInterval * 1000);
   }
 }

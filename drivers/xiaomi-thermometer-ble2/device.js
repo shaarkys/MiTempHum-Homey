@@ -3,6 +3,7 @@
 const { Device } = require("homey");
 const ADVERTISEMENT_RATE_LIMIT_MS = 5000;
 const MIN_CONNECTABLE_RSSI = -85;
+const DEFAULT_RECONNECT_INTERVAL_SECONDS = 5 * 60;
 
 class MyDevice extends Device {
   /**
@@ -62,16 +63,21 @@ class MyDevice extends Device {
     this.temperatureOffset = this.getSetting("temperature_offset") || 0;
 
     // Get the reconnect interval setting, default to 5 minutes
-    this.reconnectInterval = this.getSetting("reconnect_interval") || 5 * 60;
+    this.reconnectInterval = this.getSetting("reconnect_interval") || DEFAULT_RECONNECT_INTERVAL_SECONDS;
     this.advertisementSubscriptionActive = false;
+    this.peripheral = null;
+    this.notificationCharacteristic = null;
+    this.connectionOperation = null;
+    this.reconnectTimeout = null;
+    this.notificationWatchdogTimeout = null;
+    this.lastNotificationAt = null;
+    this.lastTempHumidityData = null;
+    this.shuttingDown = false;
 
     await this.startAdvertisementSubscription();
-    // Enable notifications and subscribe to them
-    await this.enableNotifications();
-    await this.subscribeToBLENotifications();
+    await this.ensureBLESubscription({ reason: "device initialization" });
 
-    // Set up polling
-    this.addListener("poll", this.subscribeToBLENotifications.bind(this));
+    // Periodically verify that the GATT notification stream is still alive.
     this.pollDevice();
   }
 
@@ -220,8 +226,11 @@ class MyDevice extends Device {
     }
 
     if (changedKeys.includes("reconnect_interval")) {
-      this.reconnectInterval = newSettings.reconnect_interval || 5 * 60;
+      this.reconnectInterval = newSettings.reconnect_interval || DEFAULT_RECONNECT_INTERVAL_SECONDS;
       this.log(`Device ${this.getName()} reconnect interval: ${this.reconnectInterval} seconds`);
+      this.clearReconnectTimeout();
+      this.pollDevice();
+      await this.applyReconnectIntervalChange();
     }
   }
 
@@ -237,270 +246,361 @@ class MyDevice extends Device {
    */
   async onDeleted() {
     this.log("LYWSDCGQ/01ZM BLE has been deleted");
-    await this.stopAdvertisementSubscription();
-    await this.stopBLESubscription();
-    this.polling = false;
-    clearInterval(this.pollingInterval);
+    await this.shutdownBLE();
   }
 
   async onUninit() {
+    await this.shutdownBLE();
+  }
+
+  async shutdownBLE() {
+    this.shuttingDown = true;
+    this.clearReconnectTimeout();
+    this.clearNotificationWatchdog();
+    if (this.pollingInterval) {
+      this.homey.clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
     await this.stopAdvertisementSubscription();
     await this.stopBLESubscription();
-    this.polling = false;
-    clearInterval(this.pollingInterval);
   }
 
   /**
-   * Enable notifications for temperature, humidity, and battery
+   * Enable the sensor's temperature/humidity notification mode on an existing connection.
    */
-  async enableNotifications() {
+  async enableNotifications(peripheral) {
     this.log("Enabling notifications for temperature, humidity, and battery");
-    const deviceData = this.getData();
-    const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
 
-    try {
-      const advertisement = await this.homey.ble.find(uuid);
-      if (await this.shouldSkipActiveConnection(advertisement)) {
-        return;
-      }
+    const serviceUuid = "0000fe9500001000800000805f9b34fb";
+    const characteristicUuid = "0000001000001000800000805f9b34fb";
+    const enableNotificationsData = Buffer.from([0x01, 0x00]);
 
-      const peripheral = await advertisement.connect();
-      this.log(`Connected to device: ${uuid}`);
+    const service = await peripheral.getService(serviceUuid);
+    this.log(`Obtained service: ${serviceUuid}`);
+    const characteristic = await service.getCharacteristic(characteristicUuid);
+    this.log(`Obtained characteristic: ${characteristicUuid}`);
 
-      const serviceUuid = "0000fe9500001000800000805f9b34fb";
-      const characteristicUuid = "0000001000001000800000805f9b34fb";
-      const enableNotificationsData = Buffer.from([0x01, 0x00]);
+    const currentValue = await characteristic.read();
+    this.log(`Current value of characteristic: ${currentValue.toString("hex")}`);
 
-      const service = await peripheral.getService(serviceUuid);
-      this.log(`Obtained service: ${serviceUuid}`);
-      const characteristic = await service.getCharacteristic(characteristicUuid);
-      this.log(`Obtained characteristic: ${characteristicUuid}`);
+    if (!currentValue.slice(0, enableNotificationsData.length).equals(enableNotificationsData)) {
+      this.log("Notifications not enabled, writing enableNotificationsData...");
+      await characteristic.write(enableNotificationsData);
+      this.log("Enabled notifications for temperature and humidity");
+    } else {
+      this.log("Notifications for temperature and humidity are already enabled");
+    }
 
-      const currentValue = await characteristic.read();
-      this.log(`Current value of characteristic: ${currentValue.toString("hex")}`);
+  }
 
-      if (!currentValue.slice(0, enableNotificationsData.length).equals(enableNotificationsData)) {
-        this.log("Notifications not enabled, writing enableNotificationsData...");
-        await characteristic.write(enableNotificationsData);
-        this.log("Enabled notifications for temperature and humidity");
-      } else {
-        this.log("Notifications for temperature and humidity are already enabled");
-      }
-
-      // Logging RSSI and checking signal strength
-      const rssi = advertisement.rssi;
-      this.log(`Device RSSI: ${rssi} dBm`);
-
-      const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
-      if (!this.hasCapability("measure_rssi")) {
-        try {
-          await this.addCapability("measure_rssi");
-        } catch (err) {
-          this.error("Error adding 'measure_rssi' capability:", err);
-        }
-      }
-      this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
-
-      try {
-        await this.setCapabilityValue("measure_rssi", rssi);
-      } catch (err) {
-        this.error("Error setting 'measure_rssi':", err);
-      }
-
-      if (rssi < -80) {
-        try {
-          await this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
-          setTimeout(async () => {
-            try {
-              await this.setWarning(null);
-            } catch (innerErr) {
-              this.error("Error clearing warning:", innerErr);
-            }
-          }, 15000);
-        } catch (err) {
-          this.error("Error setting warning for low RSSI:", err);
-        }
-      }
-
-      // Read firmware version
-      const deviceInformationServiceUuid = "0000180a00001000800000805f9b34fb";
-      const firmwareCharacteristicUuid = "00002a2600001000800000805f9b34fb";
-      const deviceInfoService = await peripheral.getService(deviceInformationServiceUuid);
-      const firmwareCharacteristic = await deviceInfoService.getCharacteristic(firmwareCharacteristicUuid);
-      const firmwareData = await firmwareCharacteristic.read();
+  async readFirmwareVersion(peripheral) {
+    const deviceInformationServiceUuid = "0000180a00001000800000805f9b34fb";
+    const firmwareCharacteristicUuid = "00002a2600001000800000805f9b34fb";
+    const deviceInfoService = await peripheral.getService(deviceInformationServiceUuid);
+    const firmwareCharacteristic = await deviceInfoService.getCharacteristic(firmwareCharacteristicUuid);
+    const firmwareData = await firmwareCharacteristic.read();
+    if (this.peripheral === peripheral) {
       this.log(`Firmware version: ${firmwareData.toString("utf-8")}`);
-    } catch (error) {
-      this.log(`Failed to enable notifications: ${error}`);
-      try {
-        await this.setWarning(`${error}`);
-        setTimeout(async () => {
-          try {
-            await this.setWarning(null);
-          } catch (innerErr) {
-            this.error("Error clearing warning after failure:", innerErr);
-          }
-        }, 95000);
-      } catch (err) {
-        this.error("Error setting warning after enableNotifications error:", err);
-      }
+    }
+  }
+
+  async readBatteryLevel(peripheral) {
+    const batteryServiceUuid = "0000180f00001000800000805f9b34fb";
+    const batteryCharacteristicUuid = "00002a1900001000800000805f9b34fb";
+    const batteryService = await peripheral.getService(batteryServiceUuid);
+    const batteryCharacteristic = await batteryService.getCharacteristic(batteryCharacteristicUuid);
+    const batteryData = await batteryCharacteristic.read();
+    const battery = batteryData.readUInt8(0);
+    if (this.peripheral !== peripheral) {
+      return;
+    }
+
+    this.log(`Battery level: ${battery}%`);
+    if (battery >= 0 && battery <= 100) {
+      await this.setCapabilityValue("measure_battery", battery);
     }
   }
 
   /**
-   * Subscribe to BLE notifications and read battery level
+   * Ensure exactly one healthy BLE notification subscription exists.
    */
-  async subscribeToBLENotifications() {
-    this.log("Starting BLE subscription");
-    const deviceData = this.getData();
-    const uuid = deviceData.id.toLowerCase().replace(/:/g, "");
-    let lastTempHumidityData = null;
+  async ensureBLESubscription({ force = false, reason = "BLE health check" } = {}) {
+    if (this.shuttingDown) {
+      return;
+    }
+
+    if (this.connectionOperation) {
+      return this.connectionOperation;
+    }
+
+    const operation = this.refreshBLESubscription({ force, reason });
+    this.connectionOperation = operation;
+    try {
+      await operation;
+    } finally {
+      if (this.connectionOperation === operation) {
+        this.connectionOperation = null;
+      }
+    }
+  }
+
+  isBLESubscriptionHealthy() {
+    if (!this.peripheral || !this.notificationCharacteristic || !this.lastNotificationAt) {
+      return false;
+    }
+
+    if (this.peripheral.isConnected === false) {
+      return false;
+    }
+
+    return Date.now() - this.lastNotificationAt < this.reconnectInterval * 1000;
+  }
+
+  async refreshBLESubscription({ force, reason }) {
+    if (!force && this.isBLESubscriptionHealthy()) {
+      return;
+    }
+
+    if (this.peripheral || this.notificationCharacteristic) {
+      this.log(`Resetting BLE notification subscription: ${reason}`);
+      await this.cleanupBLEConnection();
+    }
+
+    const peripheralUuid = this.getPeripheralUuid();
+    if (!peripheralUuid) {
+      this.log("Cannot start BLE notification subscription without a peripheral UUID.");
+      return;
+    }
 
     try {
-      await this.setWarning(null).catch(err => this.error("Error clearing warning before subscription:", err));
-      const advertisement = await this.homey.ble.find(uuid);
+      await this.setWarning(null).catch((error) => this.error("Error clearing warning before subscription:", error));
+      const advertisement = await this.homey.ble.find(peripheralUuid);
       if (await this.shouldSkipActiveConnection(advertisement)) {
+        this.scheduleReconnect("RSSI remains below the active connection threshold");
         return;
       }
 
+      await this.processAdvertisementUpdate(advertisement);
       const peripheral = await advertisement.connect();
-      this.log(`Connected to device: ${uuid}`);
-
-      // Logging RSSI and checking signal strength
-      const rssi = advertisement.rssi;
-      this.log(`Device RSSI: ${rssi} dBm`);
-
-      if (!this.hasCapability("measure_rssi")) {
-        try {
-          await this.addCapability("measure_rssi");
-        } catch (err) {
-          this.error("Error adding 'measure_rssi' capability:", err);
-        }
-      }
-      
-      try {
-        await this.setCapabilityValue("measure_rssi", rssi);
-      } catch (err) {
-        this.error("Error setting 'measure_rssi':", err);
+      if (this.shuttingDown) {
+        await peripheral.disconnect().catch((error) => this.log(`Failed to disconnect during shutdown: ${error}`));
+        return;
       }
 
-      const rssiPercentage = Math.round(Math.max(0, Math.min(100, ((rssi + 100) / 60) * 100)));
-      this.log(`Device RSSI Percentage: ${rssiPercentage}%`);
+      this.peripheral = peripheral;
+      peripheral.once("disconnect", () => this.handlePeripheralDisconnect(peripheral));
+      this.log(`Connected to device: ${peripheralUuid}`);
 
-      if (rssi < -80) {
-        try {
-          await this.setWarning(`RSSI (signal strength) is too low (${rssi} dBm) / ~ ${rssiPercentage}%`);
-          setTimeout(async () => {
-            try {
-              await this.setWarning(null);
-            } catch (innerErr) {
-              this.error("Error clearing warning after low RSSI:", innerErr);
-            }
-          }, 15000);
-        } catch (err) {
-          this.error("Error setting warning for low RSSI:", err);
-        }
+      await this.enableNotifications(peripheral);
+      if (this.peripheral !== peripheral) {
+        throw new Error("BLE peripheral disconnected while enabling notifications");
       }
 
       const temperatureHumidityServiceUuid = "226c000064764566756266734470666d";
       const temperatureHumidityCharacteristicUuid = "226caa5564764566756266734470666d";
-
       const tempHumService = await peripheral.getService(temperatureHumidityServiceUuid);
       const tempHumCharacteristic = await tempHumService.getCharacteristic(temperatureHumidityCharacteristicUuid);
+      this.notificationCharacteristic = tempHumCharacteristic;
 
       await tempHumCharacteristic.subscribeToNotifications((data) => {
+        if (this.peripheral !== peripheral) {
+          return;
+        }
+
+        this.lastNotificationAt = Date.now();
+        this.armNotificationWatchdog(peripheral);
         const dataString = data.toString("hex");
-        if (lastTempHumidityData !== dataString) {
+        if (this.lastTempHumidityData !== dataString) {
           this.log("Received new notification temp/humidity: ", data);
-          this.updateTag(data).catch(err => this.error("Error updating tag:", err));
-          lastTempHumidityData = dataString;
+          this.updateTag(data).catch((error) => this.error("Error updating tag:", error));
+          this.lastTempHumidityData = dataString;
         }
       });
 
-      // Read battery level
-      const batteryServiceUuid = "0000180f00001000800000805f9b34fb";
-      const batteryCharacteristicUuid = "00002a1900001000800000805f9b34fb";
-
-      const batteryService = await peripheral.getService(batteryServiceUuid);
-      const batteryCharacteristic = await batteryService.getCharacteristic(batteryCharacteristicUuid);
-      const batteryData = await batteryCharacteristic.read();
-
-      this.log(`Battery data buffer: ${batteryData.toString("hex")}`);
-
-      const battery = batteryData.readUInt8(0);
-      this.log(`Battery level: ${battery}%`);
-      if (battery >= 0 && battery <= 100) {
-        try {
-          await this.setCapabilityValue("measure_battery", battery);
-        } catch (err) {
-          this.error("Error setting 'measure_battery':", err);
-        }
+      if (this.peripheral !== peripheral) {
+        throw new Error("BLE peripheral disconnected while subscribing to notifications");
       }
 
-      peripheral.once("disconnect", async () => {
-        this.log(`Disconnected from device: ${uuid}, will reconnect in ${this.reconnectInterval} seconds`);
+      // Start the liveness window when subscribing; every notification refreshes it.
+      this.lastNotificationAt = Date.now();
+      this.lastTempHumidityData = null;
+      this.armNotificationWatchdog(peripheral);
+
+      this.clearReconnectTimeout();
+      this.log(`Subscribed to notifications for device: ${peripheralUuid}`);
+      await this.setWarning(null).catch((error) => this.error("Error clearing warning after subscription:", error));
+      this.readFirmwareVersion(peripheral).catch((error) => {
+        this.log(`Unable to read BLE firmware version: ${error.message || error}`);
       });
-
-      this.peripheral = peripheral; // Save the peripheral to unsubscribe later
-
-      this.log(`Subscribed to notifications for device: ${uuid}`);
-      try {
-        await this.setWarning(null);
-      } catch (err) {
-        this.error("Error clearing warning after subscription:", err);
-      }
+      this.readBatteryLevel(peripheral).catch((error) => {
+        this.log(`Unable to read BLE battery level: ${error.message || error}`);
+      });
     } catch (error) {
-      this.log(`Failed to subscribe to notifications: ${error}`);
-      try {
-        await this.setWarning(`${error}`);
-        setTimeout(async () => {
-          try {
-            await this.setWarning(null);
-          } catch (innerErr) {
-            this.error("Error clearing warning after subscription failure:", innerErr);
-          }
-        }, 65000);
-      } catch (err) {
-        this.error("Error setting warning after subscribeToBLENotifications error:", err);
-      }
+      this.log(`Failed to establish BLE notification subscription: ${error.message || error}`);
+      await this.setWarning(`${error}`).catch((warningError) => {
+        this.error("Error setting warning after BLE subscription failure:", warningError);
+      });
+      await this.cleanupBLEConnection();
+      this.scheduleReconnect("previous subscription attempt failed");
     }
+  }
+
+  handlePeripheralDisconnect(peripheral) {
+    if (this.peripheral !== peripheral) {
+      return;
+    }
+
+    this.peripheral = null;
+    this.notificationCharacteristic = null;
+    this.lastNotificationAt = null;
+    this.lastTempHumidityData = null;
+    this.clearNotificationWatchdog();
+    this.log(`Disconnected from device, will reconnect in ${this.reconnectInterval} seconds`);
+    this.scheduleReconnect("peripheral disconnected");
+  }
+
+  scheduleReconnect(reason) {
+    if (this.shuttingDown || this.reconnectTimeout) {
+      return;
+    }
+
+    this.log(`Scheduling BLE reconnect in ${this.reconnectInterval} seconds: ${reason}`);
+    this.reconnectTimeout = this.homey.setTimeout(() => {
+      this.reconnectTimeout = null;
+      this.ensureBLESubscription({ reason }).catch((error) => {
+        this.error("Unexpected BLE reconnect error:", error);
+      });
+    }, this.reconnectInterval * 1000);
+  }
+
+  clearReconnectTimeout() {
+    if (this.reconnectTimeout) {
+      this.homey.clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+  }
+
+  armNotificationWatchdog(peripheral, delayMs = this.reconnectInterval * 1000) {
+    this.clearNotificationWatchdog();
+    if (this.shuttingDown || this.peripheral !== peripheral) {
+      return;
+    }
+
+    this.notificationWatchdogTimeout = this.homey.setTimeout(() => {
+      this.notificationWatchdogTimeout = null;
+      if (this.shuttingDown || this.peripheral !== peripheral) {
+        return;
+      }
+
+      const notificationAgeMs = this.lastNotificationAt
+        ? Date.now() - this.lastNotificationAt
+        : this.reconnectInterval * 1000;
+      const staleThresholdMs = this.reconnectInterval * 1000;
+      if (notificationAgeMs < staleThresholdMs) {
+        this.armNotificationWatchdog(peripheral, staleThresholdMs - notificationAgeMs);
+        return;
+      }
+
+      this.ensureBLESubscription({
+        force: true,
+        reason: `no BLE notification received for ${Math.round(notificationAgeMs / 1000)} seconds`,
+      }).catch((error) => {
+        this.error("Unexpected BLE notification-watchdog error:", error);
+      });
+    }, delayMs);
+  }
+
+  clearNotificationWatchdog() {
+    if (this.notificationWatchdogTimeout) {
+      this.homey.clearTimeout(this.notificationWatchdogTimeout);
+      this.notificationWatchdogTimeout = null;
+    }
+  }
+
+  async applyReconnectIntervalChange() {
+    this.clearNotificationWatchdog();
+    if (this.peripheral && this.notificationCharacteristic && this.lastNotificationAt) {
+      const staleThresholdMs = this.reconnectInterval * 1000;
+      const notificationAgeMs = Date.now() - this.lastNotificationAt;
+      if (notificationAgeMs >= staleThresholdMs) {
+        await this.ensureBLESubscription({
+          force: true,
+          reason: `reconnect interval shortened below notification age (${Math.round(notificationAgeMs / 1000)} seconds)`,
+        });
+      } else {
+        this.armNotificationWatchdog(this.peripheral, staleThresholdMs - notificationAgeMs);
+      }
+      return;
+    }
+
+    await this.ensureBLESubscription({
+      force: Boolean(this.peripheral || this.notificationCharacteristic),
+      reason: "reconnect interval changed while BLE subscription was missing",
+    });
+  }
+
+  async checkBLESubscriptionHealth() {
+    if (this.shuttingDown) {
+      return;
+    }
+
+    if (this.peripheral && this.notificationCharacteristic) {
+      if (!this.notificationWatchdogTimeout) {
+        this.armNotificationWatchdog(this.peripheral);
+      }
+      return;
+    }
+
+    await this.ensureBLESubscription({
+      force: Boolean(this.peripheral || this.notificationCharacteristic),
+      reason: "BLE notification subscription is missing",
+    });
   }
 
   /**
    * Stop BLE subscription
    */
   async stopBLESubscription() {
-    try {
-      // Clear the disconnectTimeout when we initiate the disconnect
-      if (this.disconnectTimeout) {
-        this.homey.clearTimeout(this.disconnectTimeout);
-        this.disconnectTimeout = null;
-      }
-      
-      if (this.peripheral) {
-        await this.unsubscribeFromBLENotifications(this.peripheral);
-      }
-      this.log("Stopped BLE subscription");
-    } catch (error) {
-      this.log("Error during unsubscribe:", error);
+    this.clearReconnectTimeout();
+    if (this.connectionOperation) {
+      await this.connectionOperation.catch((error) => {
+        this.log(`BLE connection operation failed during shutdown: ${error.message || error}`);
+      });
     }
+    await this.cleanupBLEConnection();
+    this.log("Stopped BLE subscription");
   }
 
   /**
-   * Unsubscribe from BLE notifications
+   * Release both the notification callback and its GATT connection.
    */
-  async unsubscribeFromBLENotifications(peripheral) {
-    try {
-      const temperatureHumidityServiceUuid = "226c000064764566756266734470666d";
-      const temperatureHumidityCharacteristicUuid = "226caa5564764566756266734470666d";
+  async cleanupBLEConnection() {
+    const characteristic = this.notificationCharacteristic;
+    const peripheral = this.peripheral;
 
-      const tempHumService = await peripheral.getService(temperatureHumidityServiceUuid);
-      const tempHumCharacteristic = await tempHumService.getCharacteristic(temperatureHumidityCharacteristicUuid);
-      await tempHumCharacteristic.unsubscribeFromNotifications();
+    // Clear ownership before disconnecting so the disconnect event cannot schedule a duplicate reconnect.
+    this.clearNotificationWatchdog();
+    this.notificationCharacteristic = null;
+    this.peripheral = null;
+    this.lastNotificationAt = null;
+    this.lastTempHumidityData = null;
 
-      await peripheral.disconnect();
-      this.log(`Unsubscribed from notifications and disconnected from device: ${peripheral.id}`);
-    } catch (error) {
-      this.log(`Failed to unsubscribe from notifications: ${error}`);
+    if (characteristic) {
+      try {
+        await characteristic.unsubscribeFromNotifications();
+        this.log("Unsubscribed from BLE notifications");
+      } catch (error) {
+        this.log(`Failed to unsubscribe from BLE notifications: ${error.message || error}`);
+      }
+    }
+
+    if (peripheral) {
+      try {
+        await peripheral.disconnect();
+        this.log(`Disconnected from device: ${peripheral.id}`);
+      } catch (error) {
+        this.log(`Failed to disconnect BLE peripheral: ${error.message || error}`);
+      }
     }
   }
 
@@ -570,9 +670,13 @@ class MyDevice extends Device {
    */
   pollDevice() {
     if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
+      this.homey.clearInterval(this.pollingInterval);
     }
-    this.pollingInterval = setInterval(() => this.emit("poll"), this.reconnectInterval * 1000);
+    this.pollingInterval = this.homey.setInterval(() => {
+      this.checkBLESubscriptionHealth().catch((error) => {
+        this.error("Unexpected BLE health-check error:", error);
+      });
+    }, this.reconnectInterval * 1000);
   }
 }
 
