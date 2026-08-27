@@ -154,5 +154,8 @@
   },
   "1.2.48": {
     "en": "Added support for the Xiaomi XMWSDJ04MMC Bluetooth temperature and humidity sensor."
+  },
+  "1.2.49": {
+    "en": "Fixed BLE connection lifecycle issues causing MJ_HT_V1 and LYWSD03MMC sensor updates to stop after prolonged uptime."
   }
 }
