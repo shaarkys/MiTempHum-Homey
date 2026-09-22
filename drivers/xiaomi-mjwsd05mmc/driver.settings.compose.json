@@ -1,0 +1,21 @@
+[
+  {
+    "id": "temperature_offset",
+    "type": "number",
+    "label": { "en": "Temperature Offset" },
+    "value": 0,
+    "min": -5,
+    "max": 5,
+    "hint": { "en": "Offset applied to MJWSD05MMC temperature readings." },
+    "units": { "en": "°C" }
+  },
+  {
+    "id": "bindkey",
+    "type": "text",
+    "label": { "en": "BLE Bindkey" },
+    "value": "",
+    "hint": {
+      "en": "Enter this sensor's 32-character hexadecimal Xiaomi BLE bindkey to read encrypted measurements. You can pair first and enter the key here afterwards."
+    }
+  }
+]

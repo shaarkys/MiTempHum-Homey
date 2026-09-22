@@ -1,1 +1,8 @@
-{}
+{
+  "mjwsd05mmc": {
+    "bindkey_required": "Enter this MJWSD05MMC sensor's 32-character BLE bindkey in Advanced Settings to read its encrypted measurements.",
+    "decryption_failed": "MJWSD05MMC measurement decryption failed. Check this sensor's BLE bindkey in Advanced Settings.",
+    "unsupported_encryption": "This MJWSD05MMC sensor uses an unsupported MiBeacon encryption format.",
+    "invalid_bindkey": "The BLE bindkey must contain exactly 32 hexadecimal characters."
+  }
+}
