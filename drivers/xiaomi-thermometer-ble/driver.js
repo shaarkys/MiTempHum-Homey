@@ -21,8 +21,9 @@ class MyDriver extends Driver {
     this.managePolling();
 
     // Listen for device add/remove events to manage polling dynamically
-    this.on("device.added", this.managePolling.bind(this));
-    this.on("device.removed", this.managePolling.bind(this));
+    this.managePollingListener = this.managePolling.bind(this);
+    this.on("device.added", this.managePollingListener);
+    this.on("device.removed", this.managePollingListener);
   }
 
   managePolling() {
@@ -30,15 +31,27 @@ class MyDriver extends Driver {
       .filter((device) => !device.isUsingAdvertisementSubscription || !device.isUsingAdvertisementSubscription());
     if (devices.length > 0 && !this.polling) {
       this.polling = true;
-      if (!this.pollListener) {
-        this.pollListener = this.pollDevice.bind(this);
-        this.addListener("poll", this.pollListener);
-      }
-      this.emit("poll");
       this.log("Started polling BLE ATC devices.");
     } else if (devices.length === 0 && this.polling) {
       this.polling = false;
       this.log("No ATC LYWSD03MMC devices found. Polling is disabled.");
+    }
+    if (this.polling && !this.pollTask) {
+      this.pollTask = this.pollDevice().catch((error) => {
+        this.error("ATC polling loop failed:", error);
+        this.polling = false;
+      }).finally(() => {
+        this.pollTask = null;
+        if (this.polling) this.managePolling();
+      });
+    }
+  }
+
+  async onUninit() {
+    this.polling = false;
+    if (this.managePollingListener) {
+      this.off("device.added", this.managePollingListener);
+      this.off("device.removed", this.managePollingListener);
     }
   }
 
@@ -133,6 +146,7 @@ class MyDriver extends Driver {
           await delay(1);
         } else {
           this.error("Error during BLE discovery:", error);
+          await delay(1);
         }
       }
     }
