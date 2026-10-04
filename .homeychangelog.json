@@ -160,5 +160,8 @@
   },
   "1.2.50": {
     "en": "Experimental support of MJWSD05MMC - Xiaomi Smart Temperature and Humidity Monitor 3"
+  },
+  "1.2.51": {
+    "en": "Fixed ATC BLE thermometers freezing after app restart by switching to discovery polling when advertisement subscriptions stop delivering readings."
   }
 }
