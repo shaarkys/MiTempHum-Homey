@@ -1163,7 +1163,7 @@
           },
           {
             "changelog": {
-              "en": "Updates pvvx ZigbeeTLc firmware to 3001-0138."
+              "en": "Updates pvvx ZigbeeTLc to 0.1.4.0 (3001-0140, file version 20983809). Updates the Zigbee reporting logic."
             },
             "device": {
               "manufacturerName": "Xiaomi",
@@ -1173,12 +1173,12 @@
             },
             "files": [
               {
-                "fileVersion": 20459521,
+                "fileVersion": 20983809,
                 "imageType": 522,
                 "manufacturerCode": 4417,
-                "size": 134210,
-                "name": "1141-020a-01383001-Z03MMC.zigbee",
-                "integrity": "sha512:37f64674665fd73f043cc8a81aff1fdaaed296ff73470018d56071753753063055eda5abf6af5262696d38e034c0fdb744e987c8a59c3db43689520b0d88590f"
+                "size": 133922,
+                "name": "1141-020a-01403001-Z03MMC.zigbee",
+                "integrity": "sha512:2247834994fbc2f88a6cd7c593bd32af1015cee5ac70255f67d479272a5083dd392a3103fba4bb4dc1bc66f0a9759241e42bd55564d5565324b062ad6b7bec29"
               }
             ]
           }

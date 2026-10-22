@@ -28,3 +28,6 @@ env.json
 drivers/MJYD02YL.ZIP
 /node_modules
 AGENTS.md
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
