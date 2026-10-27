@@ -166,5 +166,8 @@
   },
   "1.2.52": {
     "en": "Updated LYWSD03MMC-z OTA firmware to 20983809 while preserving legacy migration support."
+  },
+  "1.2.53": {
+    "en": "Adds OTA update support for early pvvx 3001-0118 sensors using the original LYWSD03MMC product ID."
   }
 }
