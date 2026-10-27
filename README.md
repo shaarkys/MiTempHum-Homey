@@ -5,3 +5,13 @@ MJWSD05MMC with stock Xiaomi firmware uses encrypted Bluetooth advertisements. S
 Big Thanks for Zsolt Reinhardt (original developer of this app), "Horakmartin" for the contribution and for Robert Klep for implementing ZigBee drivers also!
 
 LYWSD03MMC sensors running pvvx Zigbee firmware can update to file version **20983809** through Homey's Device Updates. See [firmware details and testing](docs/LYWSD03MMC-firmware.md).
+
+## Support development
+
+If this integration is useful to you, you can optionally support my ongoing development and maintenance:
+
+- [GitHub Sponsors](https://github.com/sponsors/shaarkys)
+- [Ko-fi](https://ko-fi.com/bretislavkubesa)
+- [PayPal](https://www.paypal.com/paypalme/bkubesa)
+
+Contributions are appreciated, never required, and do not affect features or support.

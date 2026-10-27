@@ -73,6 +73,9 @@
   },
   "contributing": {
     "donate": {
+      "githubSponsors": {
+        "username": "shaarkys"
+      },
       "paypal": {
         "username": "bkubesa"
       }
@@ -1158,6 +1161,29 @@
                 "size": 134210,
                 "name": "db15-0203-79993001-Z03MMC_v0138.zigbee",
                 "integrity": "sha512:4ef49f822f48e9c5114dcff7df3f3d877826480e64edfb4302e91d459186cf2c4aff6c02c1c3ffc04ea6c5a97073d7e4390226731928ae3e6c1961ae60a20c4a"
+              }
+            ]
+          },
+          {
+            "changelog": {
+              "en": "Updates early pvvx ZigbeeTLc 3001-0118 to 0.1.4.0 (3001-0140, file version 20983809). Updates the Zigbee reporting logic. Sensor settings and network bindings may be reset; re-pairing may be required."
+            },
+            "device": {
+              "manufacturerName": "Xiaomi",
+              "productId": [
+                "LYWSD03MMC"
+              ]
+            },
+            "files": [
+              {
+                "fileVersion": 20983809,
+                "imageType": 522,
+                "manufacturerCode": 4417,
+                "minFileVersion": 18362369,
+                "maxFileVersion": 18362369,
+                "size": 133922,
+                "name": "1141-020a-01403001-Z03MMC.zigbee",
+                "integrity": "sha512:2247834994fbc2f88a6cd7c593bd32af1015cee5ac70255f67d479272a5083dd392a3103fba4bb4dc1bc66f0a9759241e42bd55564d5565324b062ad6b7bec29"
               }
             ]
           },

@@ -67,3 +67,21 @@ test("legacy devbis migration retains its version gates and separate image type"
     assert.equal(file.maxFileVersion, sourceVersion);
   }
 });
+
+test("early pvvx LYWSD03MMC update is restricted to the verified 3001-0118 identity", () => {
+  const legacyUpdates = firmwareCompose.updates.filter(({ device }) => device.productId.includes("LYWSD03MMC"));
+  assert.equal(legacyUpdates.length, 2);
+  const pvvxUpdates = legacyUpdates.filter(({ files }) => files.some(({ imageType }) => imageType === 0x020a));
+  assert.equal(pvvxUpdates.length, 1);
+  const [update] = pvvxUpdates;
+  assert.deepEqual(update.device, {
+    manufacturerName: "Xiaomi",
+    productId: ["LYWSD03MMC"],
+  });
+  const standardUpdate = firmwareCompose.updates.find(({ device }) => device.productId.includes("LYWSD03MMC-z"));
+  assert.deepEqual(update.files, [{
+    ...standardUpdate.files[0],
+    minFileVersion: 0x01183001,
+    maxFileVersion: 0x01183001,
+  }]);
+});

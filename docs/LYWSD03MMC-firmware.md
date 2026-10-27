@@ -4,7 +4,28 @@ The `xiaomi-thermometer-zigbee` driver offers pvvx ZigbeeTLc **3001-0140** throu
 Homey's built-in Device Updates. Its OTA file version is **20983809**
 (`0x01403001`). This is for sensors already running the Zigbee firmware identifying
 as `Xiaomi` / `LYWSD03MMC-z`, manufacturer code `0x1141`, image type `0x020A`.
+An additional route supports early pvvx **3001-0118** sensors still identifying as
+`Xiaomi` / `LYWSD03MMC`, restricted to manufacturer code `0x1141`, image type
+`0x020A`, and current OTA file version **18362369** (`0x01183001`).
 It does not flash stock Bluetooth sensors or change the BLE drivers.
+
+## Early pvvx firmware using the old product name
+
+pvvx added the `-z` suffix in **0.1.2.0**, so **0.1.1.8** can report the original
+`LYWSD03MMC` product ID. This route reuses the standard 3001-0140 image with an
+exact source-version gate; it does not widen the separate devbis migration routes
+or enable updates for other firmware using the old product name.
+
+The original identity is defined in the
+[pvvx 0.1.1.8 source](https://github.com/pvvx/ZigbeeTLc/blob/8d013ee2cd90bea146be7eb2daf35efe530f12b9/src/version_cfg.h).
+Verify the actual sensor's OTA manufacturer code, image type, and file version
+before testing. The product name and Basic-cluster firmware string alone do not
+prove its OTA identity.
+
+Upstream warns that newer firmware uses an incompatible settings format and can
+clear previous settings and network bindings. Record the sensor's settings and
+existing Flows before updating; re-pairing may be required. See the
+[upstream compatibility warning and version history](https://github.com/pvvx/ZigbeeTLc).
 
 ## Changes since the bundled 0.1.3.8 firmware
 
@@ -56,6 +77,12 @@ containing this change:
    and existing Flows still work, and measurements resume after an app restart.
 5. Separately test the retained devbis migration route if it is needed. Do not
    treat standard pvvx update success as proof of that migration path.
+6. For the early pvvx route, first verify `Xiaomi` / `LYWSD03MMC`, manufacturer
+   code `0x1141`, image type `0x020A`, and current file version `0x01183001`.
+   Check that 20983809 is offered, then perform steps 2-4 on one TEST sensor.
+   Account for the possible settings/binding reset described above, and verify
+   the resulting product ID, settings, measurements, and existing Flows. Confirm
+   a devbis sensor still receives only its matching migration image.
 
 Homey's [device update guide](https://support.homey.app/hc/en-us/articles/27220629667356-Update-your-devices-in-Homey)
 describes update availability, wake instructions, and progress reporting.
